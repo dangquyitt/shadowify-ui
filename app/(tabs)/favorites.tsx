@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 type Props = {};
 
-const Page = (props: Props) => {
+const Favorites = (props: Props) => {
   return (
     <View style={styles.container}>
       <Text>Favorites Screen</Text>
@@ -11,7 +11,7 @@ const Page = (props: Props) => {
   );
 };
 
-export default Page;
+export default Favorites;
 
 const styles = StyleSheet.create({
   container: {

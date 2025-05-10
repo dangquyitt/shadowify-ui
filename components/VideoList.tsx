@@ -1,23 +1,70 @@
 import { Colors } from "@/constants/Colors";
 import { Video } from "@/types/video";
+import { useRouter } from "expo-router";
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 type Props = {
   videos: Array<Video>;
 };
 
 const VideoList = ({ videos }: Props) => {
+  const { width } = useWindowDimensions();
+  const router = useRouter();
+  // Thumbnail takes ~40% width, info takes ~60%
+  const containerPadding = 20;
+  const thumbWidth = Math.round((width - containerPadding * 2) * 0.4);
+  const thumbHeight = Math.round((thumbWidth * 9) / 16);
+
   return (
     <View style={styles.container}>
-      {videos.map((item, index) => (
-        <View key={index} style={styles.itemContainer}>
-          <Image source={{ uri: item.thumbnailURL }} style={styles.itemImg} />
-          <View style={styles.itemInfo}>
-            <Text style={styles.itemTitle}>{item.title}</Text>
-            <Text style={styles.itemSubTitle}>{item.subTitle}</Text>
+      {videos.map((item) => (
+        <TouchableOpacity
+          key={item.id}
+          style={styles.itemContainer}
+          activeOpacity={0.85}
+          onPress={() =>
+            router.push({
+              pathname: "/(screens)/video-detail",
+              params: { videoId: item.videoId },
+            })
+          }
+        >
+          <View
+            style={[
+              styles.thumbBox,
+              { width: thumbWidth, height: thumbHeight },
+            ]}
+          >
+            <Image
+              source={{ uri: item.thumbnailURL }}
+              style={[
+                styles.itemImg,
+                { width: thumbWidth, height: thumbHeight },
+              ]}
+              resizeMode="cover"
+            />
+            <View style={styles.durationOverlay}>
+              <Text style={styles.durationText}>{item.duration}</Text>
+            </View>
           </View>
-        </View>
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <Text style={styles.channelName}>{item.channelName}</Text>
+            <Text style={styles.metaInfo}>
+              {item.views.toLocaleString()} views • {item.publishedAt}
+            </Text>
+          </View>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -36,25 +83,55 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10,
   },
+  thumbBox: {
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: Colors.background,
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   itemImg: {
-    width: 150,
-    height: 100,
-    borderRadius: 20,
-    marginRight: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+    width: "100%",
+    height: "100%",
+  },
+  durationOverlay: {
+    position: "absolute",
+    right: 6,
+    bottom: 6,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  durationText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
   },
   itemInfo: {
     flex: 1,
-    gap: 10,
-    justifyContent: "space-between",
-  },
-  itemSubTitle: {
-    fontSize: 12,
-    color: Colors.darkGrey,
-    textTransform: "capitalize",
+    marginLeft: 12,
+    gap: 4,
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
   itemTitle: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: Colors.black,
+    marginBottom: 2,
+  },
+  channelName: {
+    fontSize: 13,
+    color: Colors.softText,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  metaInfo: {
+    fontSize: 12,
+    color: Colors.darkGrey,
   },
 });

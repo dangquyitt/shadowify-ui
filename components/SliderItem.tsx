@@ -2,7 +2,8 @@ import { Colors } from "@/constants/Colors";
 import { Video } from "@/types/video";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Dimensions, Image, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Image, StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -40,20 +41,33 @@ const SliderItem = ({ item, index, scrollX }: Props) => {
     };
   });
 
+  const router = useRouter();
+  const thumbWidth = width - 60;
+  const thumbHeight = Math.round(thumbWidth * 9 / 16);
+
   return (
     <Animated.View style={[styles.itemWrapper, rnStyle]}>
-      <Image source={{ uri: item.thumbnailURL }} style={styles.image} />
-      <LinearGradient
-        colors={["transparent", "rgba(0, 0, 0, 0.8)"]}
-        style={styles.background}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => router.push({ pathname: "/(screens)/video-detail", params: { videoId: item.videoId } })}
       >
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.subTitle} numberOfLines={2}>
-            {item.subTitle}
-          </Text>
-        </View>
-      </LinearGradient>
+        <Image
+          source={{ uri: item.thumbnailURL }}
+          style={[styles.image, { width: thumbWidth, height: thumbHeight }]}
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={["transparent", "rgba(0, 0, 0, 0.8)"]}
+          style={[styles.background, { width: thumbWidth, height: thumbHeight }]}
+        >
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.subTitle} numberOfLines={2}>
+              {item.subTitle}
+            </Text>
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
@@ -68,16 +82,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   image: {
-    width: width - 60,
-    height: 180,
     borderRadius: 20,
+    backgroundColor: Colors.background,
   },
   background: {
     position: "absolute",
     right: 30,
     top: 0,
-    width: width - 60,
-    height: 180,
     borderRadius: 20,
     padding: 20,
   },

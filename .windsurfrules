@@ -27,6 +27,7 @@
 
 # Styling & UI
 
+- Only using colors in /constants/Colors.ts
 - Use Expo's built-in components for common UI patterns and layouts.
 - Implement responsive design with Flexbox and useWindowDimensions.
 - Use styled-components or Tailwind CSS for styling.

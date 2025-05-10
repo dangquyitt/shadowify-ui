@@ -74,7 +74,7 @@ import Header from "@/components/Header";
 // ...
 // Xoá function Header, thay thế bằng AppHeader trong JSX
 
-const Page = () => {
+const Settings = () => {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -152,7 +152,7 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default Settings;
 
 const styles = StyleSheet.create({
   container: {

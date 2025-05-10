@@ -117,7 +117,7 @@ function WordItem({ word, meaning }: Word) {
   );
 }
 
-const Page = () => {
+const Saved = () => {
   const [tab, setTab] = useState<TabKey>("sentences");
   const [search, setSearch] = useState("");
 
@@ -171,7 +171,7 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default Saved;
 
 const styles = StyleSheet.create({
   container: {

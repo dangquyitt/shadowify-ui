@@ -4,4 +4,8 @@ export interface Video {
   subTitle: string;
   channelName: string;
   thumbnailURL: string;
+  videoId: string;
+  duration: string;
+  views: number;
+  publishedAt: string;
 }
