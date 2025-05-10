@@ -7,11 +7,11 @@ export const icon = {
     ) : (
       <Ionicons name="home-outline" size={24} color={color} />
     ),
-  discover: ({ color, focused }: { color: string; focused: boolean }) =>
+  favorites: ({ color, focused }: { color: string; focused: boolean }) =>
     focused ? (
-      <Ionicons name="compass" size={25} color={color} />
+      <Ionicons name="heart" size={25} color={color} />
     ) : (
-      <Ionicons name="compass-outline" size={25} color={color} />
+      <Ionicons name="heart-outline" size={25} color={color} />
     ),
   saved: ({ color, focused }: { color: string; focused: boolean }) =>
     focused ? (

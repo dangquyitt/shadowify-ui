@@ -15,9 +15,9 @@ const TabLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="discover"
+        name="favorites"
         options={{
-          title: "Discover",
+          title: "Favorites",
         }}
       />
       <Tabs.Screen
