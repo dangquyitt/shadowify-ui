@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -38,8 +39,6 @@ const MOCK_TRANSCRIPT = [
 
 const YOUTUBE_VIDEO_ID = "pyf8cbqyfPs";
 
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 export default function VideoDetailScreen() {
   const [currentLine, setCurrentLine] = useState("1");
   const [paused, setPaused] = useState(true);
@@ -60,8 +59,6 @@ export default function VideoDetailScreen() {
   const position = 2; // 00:02
   const percent = (position / duration) * 100;
 
-  const insets = useSafeAreaInsets();
-
   function handleWordPress(word: string) {
     setDictionaryWord(word);
     setShowDictionary(true);
@@ -74,9 +71,9 @@ export default function VideoDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => router.back()}
@@ -183,7 +180,7 @@ export default function VideoDetailScreen() {
           onClose={() => setShowTranslate(false)}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

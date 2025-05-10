@@ -1,3 +1,4 @@
+import { Header } from "@/components/Header";
 import { Colors } from "@/constants/Colors";
 import {
   Feather,
@@ -7,13 +8,13 @@ import {
 } from "@expo/vector-icons";
 import React from "react";
 import {
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface SettingItemProps {
   icon: React.ReactNode;
@@ -68,16 +69,9 @@ function VersionText() {
   );
 }
 
-import Header from "@/components/Header";
-// ... (các import khác giữ nguyên)
-
-// ...
-// Xoá function Header, thay thế bằng AppHeader trong JSX
-
 const Settings = () => {
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -148,7 +142,7 @@ const Settings = () => {
         </Section>
         <VersionText />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

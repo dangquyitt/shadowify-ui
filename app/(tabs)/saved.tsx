@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/AppHeader";
+import { Header } from "@/components/Header";
 import { Colors } from "@/constants/Colors";
 import { Feather } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
@@ -142,7 +142,7 @@ const Saved = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader />
+      <Header />
 
       <TabSwitch tab={tab} onTabChange={setTab} />
       <SearchBar value={search} onChange={setSearch} />

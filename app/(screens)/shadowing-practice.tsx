@@ -3,13 +3,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import YoutubePlayer from "react-native-youtube-iframe";
 import { ShadowingRecorder } from "../../components/ShadowingRecorder";
 import { Colors } from "../../constants/Colors";
@@ -33,7 +33,6 @@ export default function ShadowingPracticeScreen() {
   const [isPaused, setIsPaused] = useState(false);
 
   const playerRef = useRef(null);
-  const insets = useSafeAreaInsets();
 
   // Auto-pause video when recording
   useEffect(() => {
@@ -65,9 +64,9 @@ export default function ShadowingPracticeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -95,7 +94,7 @@ export default function ShadowingPracticeScreen() {
       </View>
 
       {/* Main Content ScrollView */}
-      <ScrollView 
+      <ScrollView
         style={styles.contentScrollView}
         contentContainerStyle={{ paddingBottom: 20 }}
       >
@@ -145,15 +144,15 @@ export default function ShadowingPracticeScreen() {
         ) : (
           <View style={styles.resultsContainer}>
             {/* Record Again Button (Left) */}
-            <TouchableOpacity 
-              style={styles.resultButton} 
+            <TouchableOpacity
+              style={styles.resultButton}
               onPress={handleRecordAgain}
               accessibilityLabel="Record again"
             >
               <MaterialIcons name="replay" size={24} color={Colors.tint} />
               <Text style={styles.resultButtonText}>Record Again</Text>
             </TouchableOpacity>
-            
+
             {/* Accuracy Circle (Middle) */}
             <View style={styles.accuracyCircleContainer}>
               <View style={styles.accuracyCircle}>
@@ -161,20 +160,24 @@ export default function ShadowingPracticeScreen() {
               </View>
               <Text style={styles.accuracyLabel}>Accuracy</Text>
             </View>
-            
+
             {/* My Record Button (Right) */}
-            <TouchableOpacity 
-              style={styles.resultButton} 
+            <TouchableOpacity
+              style={styles.resultButton}
               onPress={handlePlayRecording}
               accessibilityLabel="Play my recording"
             >
-              <MaterialIcons name="play-circle-filled" size={24} color={Colors.tint} />
+              <MaterialIcons
+                name="play-circle-filled"
+                size={24}
+                color={Colors.tint}
+              />
               <Text style={styles.resultButtonText}>My Record</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -242,14 +245,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   resultsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 15,
   },
   accuracyCircleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
   },
   accuracyCircle: {
@@ -259,12 +262,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderWidth: 3,
     borderColor: Colors.tint,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   accuracyText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.tint,
   },
   accuracyLabel: {
@@ -273,7 +276,7 @@ const styles = StyleSheet.create({
     color: Colors.darkGrey,
   },
   resultButton: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 10,
     width: 90,
   },
@@ -281,20 +284,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     color: Colors.darkGrey,
-    textAlign: 'center',
+    textAlign: "center",
   },
   speechResultContainer: {
     margin: 16,
   },
   speechResultHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   speechResultTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.black,
   },
   speechResultBox: {

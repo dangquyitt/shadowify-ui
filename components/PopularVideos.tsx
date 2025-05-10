@@ -1,115 +1,63 @@
 import { Colors } from "@/constants/Colors";
-import { Video } from "@/types/video";
-import React, { useEffect, useRef, useState } from "react";
+import { mockVideos } from "@/constants/mockVideos";
+import React, { useState } from "react";
 import {
+  FlatList,
+  ImageBackground,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
-  ViewToken,
 } from "react-native";
-import Animated, {
-  scrollTo,
-  useAnimatedRef,
-  useAnimatedScrollHandler,
-  useDerivedValue,
-  useSharedValue,
-} from "react-native-reanimated";
 import Pagination from "./Pagination";
-import SliderItem from "./SliderItem";
 
-type Props = {
-  videos: Array<Video>;
-};
-
-const PopularVideos = ({ videos }: Props) => {
-  const [data, setData] = useState(videos);
-  const [paginationIdx, setPaginationIdx] = useState(0);
-  const scrollX = useSharedValue(0);
-  const ref = useAnimatedRef<Animated.FlatList<any>>();
-  const [isAutoPlay, setIsAutoPlay] = useState(true);
-  const interval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const offset = useSharedValue(0);
+const PopularVideos = () => {
   const { width } = useWindowDimensions();
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const onScrollHandler = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      scrollX.value = e.contentOffset.x;
-    },
-    onMomentumEnd: (e) => {
-      offset.value = e.contentOffset.x;
-    },
-  });
-
-  useEffect(() => {
-    if (isAutoPlay === true) {
-      interval.current = setInterval(() => {
-        offset.value = offset.value + width;
-      }, 5000);
-    } else {
-      clearInterval(interval.current);
-    }
-    return () => clearInterval(interval.current);
-  }, [isAutoPlay, offset, width]);
-
-  useDerivedValue(() => {
-    scrollTo(ref, offset.value, 0, true);
-  });
-
-  const onViewableItemsChanged = ({
-    viewableItems,
-  }: {
-    viewableItems: ViewToken[];
-  }) => {
-    if (
-      viewableItems.length > 0 &&
-      viewableItems[0].index !== undefined &&
-      viewableItems[0].index !== null
-    ) {
-      const newIndex = viewableItems[0].index;
-      setPaginationIdx(newIndex % videos.length);
-    }
+  const onMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    setCurrentIndex(index);
   };
-
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
-    minimumViewTime: 100,
-  };
-
-  const viewabilityConfigCallbackPairs = useRef([
-    { viewabilityConfig, onViewableItemsChanged },
-  ]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Popular Videos</Text>
-      <View style={styles.slideWrapper}>
-        <Animated.FlatList
-          ref={ref}
-          data={data}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item, index }) => (
-            <SliderItem item={item} index={index} scrollX={scrollX} />
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          onScroll={onScrollHandler}
-          scrollEventThrottle={16}
-          onEndReachedThreshold={0.5}
-          onEndReached={() => setData([...data, ...videos])}
-          viewabilityConfigCallbackPairs={
-            viewabilityConfigCallbackPairs.current
-          }
-          onScrollBeginDrag={() => setIsAutoPlay(false)}
-          onScrollEndDrag={() => setIsAutoPlay(true)}
-        />
-        <Pagination
-          items={videos}
-          paginationIndex={paginationIdx}
-          scrollX={scrollX}
-        />
-      </View>
+      <Text style={styles.sectionTitle}>The most popular video</Text>
+      <FlatList
+        data={mockVideos}
+        keyExtractor={(item) => item.id}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        renderItem={({ item }) => (
+          <View style={{ alignItems: "center", width }}>
+            <ImageBackground
+              source={{ uri: item.thumbnailURL }}
+              style={[
+                styles.popularCard,
+                {
+                  width: width - 32,
+                  height: ((width - 32) * 9) / 16,
+                },
+              ]}
+              imageStyle={styles.popularCardImage}
+            >
+              <View style={styles.overlay} />
+              <View style={styles.popularContent}>
+                <Text style={styles.popularTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
+              </View>
+            </ImageBackground>
+          </View>
+        )}
+      />
+      <Pagination items={mockVideos} paginationIndex={currentIndex} />
     </View>
   );
 };
@@ -118,16 +66,62 @@ export default PopularVideos;
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10,
+    marginBottom: 20,
+    marginTop: 4,
   },
-  title: {
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: Colors.black,
-    marginBottom: 10,
-    marginLeft: 20,
+    marginBottom: 8,
+    marginLeft: 16,
   },
-  slideWrapper: {
-    justifyContent: "center",
+  channelItem: {
+    alignItems: "center",
+    marginRight: 18,
+    width: 76,
+  },
+  channelAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.lightGrey,
+    marginBottom: 4,
+  },
+  channelName: {
+    fontSize: 13,
+    color: Colors.black,
+    textAlign: "center",
+    width: 70,
+  },
+  popularCard: {
+    height: 180,
+    borderRadius: 18,
+    overflow: "hidden",
+    marginBottom: 12,
+    justifyContent: "flex-end",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  popularCardImage: {
+    resizeMode: "cover",
+    borderRadius: 18,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.28)",
+  },
+  popularContent: {
+    padding: 18,
+  },
+  popularTitle: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
+    textShadowColor: "rgba(0,0,0,0.4)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

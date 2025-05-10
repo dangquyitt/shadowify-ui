@@ -1,18 +1,18 @@
 import Categories from "@/components/Categories";
-import Header from "@/components/Header";
+import { Header } from "@/components/Header";
 import PopularVideos from "@/components/PopularVideos";
+import RecommendedChannels from "@/components/RecommendedChannels";
 import SearchBar from "@/components/SearchBar";
 import VideoList from "@/components/VideoList";
 import { mockVideos } from "@/constants/mockVideos";
 import { Video } from "@/types/video";
 import React, { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Props = {};
 
 const Page = (props: Props) => {
-  const insets = useSafeAreaInsets();
   const [videos, setVideos] = useState<Video[]>(mockVideos);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,17 +21,16 @@ const Page = (props: Props) => {
   };
 
   return (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
-      <Header />
-      <SearchBar />
-      {isLoading ? (
-        <ActivityIndicator size="large" />
-      ) : (
-        <PopularVideos videos={videos} />
-      )}
-      <Categories onCategoryChanged={onCatChanged} />
-      <VideoList videos={videos} />
-    </ScrollView>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <Header />
+        <SearchBar />
+        <RecommendedChannels />
+        {isLoading ? <ActivityIndicator size="large" /> : <PopularVideos />}
+        <Categories onCategoryChanged={onCatChanged} />
+        <VideoList videos={videos} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

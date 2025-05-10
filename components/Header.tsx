@@ -1,58 +1,94 @@
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
-type Props = {};
+interface HeaderProps {
+  title?: string;
+  showPremium?: boolean;
+  containerStyle?: ViewStyle;
+}
 
-const Header = (props: Props) => {
+export function Header({
+  title,
+  showPremium = true,
+  containerStyle,
+}: HeaderProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.userInfo}>
-        <Image
-          source={{ uri: "https://xsgames.co/randomusers/avatar.php?g=male" }}
-          style={styles.userImg}
-        />
-        <View style={{ gap: 3 }}>
-          <Text style={styles.welcomeText}>Welcome</Text>
-          <Text style={styles.userNameText}>John Doe!</Text>
-        </View>
+    <View style={[styles.headerContainer, containerStyle]}>
+      <View style={styles.logoRow}>
+        <Text style={styles.logoText} accessibilityRole="header">
+          shadow<Text style={styles.logoAccent}>ify</Text>
+        </Text>
+        {title && <Text style={styles.title}>{title}</Text>}
       </View>
-      <TouchableOpacity onPress={() => {}}>
-        <Ionicons name="notifications-outline" size={24} color={Colors.black} />
-      </TouchableOpacity>
+      {showPremium && (
+        <TouchableOpacity
+          style={styles.premiumBtn}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name="diamond"
+            size={16}
+            color={Colors.tint}
+            style={{ marginRight: 4 }}
+          />
+          <Text style={styles.premiumText}>Premium</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
-};
-
-export default Header;
+}
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
+  headerContainer: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    marginBottom: 12,
   },
-  userImg: {
-    width: 50,
-    height: 50,
-    borderRadius: 30,
-  },
-  userInfo: {
+  logoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
   },
-  welcomeText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: Colors.darkGrey,
-  },
-  userNameText: {
-    fontSize: 14,
+  logoText: {
+    fontSize: 26,
     fontWeight: "700",
     color: Colors.black,
+    letterSpacing: 0.5,
+  },
+  logoAccent: {
+    color: Colors.tint,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.tint,
+    marginLeft: 10,
+    alignSelf: "flex-end",
+  },
+  premiumBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.tint,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  premiumText: {
+    color: Colors.tint,
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

@@ -2,15 +2,14 @@ import { Colors } from "@/constants/Colors";
 import { Video } from "@/types/video";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { SharedValue } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 type Props = {
   items: Video[];
   paginationIndex: number;
-  scrollX: SharedValue<number>;
 };
 
-const Pagination = ({ items, paginationIndex, scrollX }: Props) => {
+const Pagination = ({ items, paginationIndex }: Props) => {
   return (
     <View style={styles.container}>
       {items.map((_, index) => (
