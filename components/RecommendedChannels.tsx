@@ -1,5 +1,12 @@
 import { Colors } from "@/constants/Colors";
-import { FlatList, Image, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 // Mock data for recommended channels
 const recommendedChannels = [
@@ -50,16 +57,18 @@ function RecommendedChannels() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
         renderItem={({ item }) => (
-          <View style={styles.channelItem}>
-            <Image
-              source={{ uri: item.logo }}
-              style={styles.channelAvatar}
-              resizeMode="cover"
-            />
-            <Text style={styles.channelName} numberOfLines={2}>
-              {item.name}
-            </Text>
-          </View>
+          <TouchableOpacity>
+            <View style={styles.channelItem}>
+              <Image
+                source={{ uri: item.logo }}
+                style={styles.channelAvatar}
+                resizeMode="cover"
+              />
+              <Text style={styles.channelName} numberOfLines={2}>
+                {item.name}
+              </Text>
+            </View>
+          </TouchableOpacity>
         )}
       />
     </View>

@@ -4,17 +4,15 @@ import PopularVideos from "@/components/PopularVideos";
 import RecommendedChannels from "@/components/RecommendedChannels";
 import SearchBar from "@/components/SearchBar";
 import VideoList from "@/components/VideoList";
-import { mockVideos } from "@/constants/mockVideos";
-import { Video } from "@/types/video";
-import React, { useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet } from "react-native";
+import { useVideos } from "@/hooks/useVideos";
+import React from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type Props = {};
 
 const Page = (props: Props) => {
-  const [videos, setVideos] = useState<Video[]>(mockVideos);
-  const [isLoading, setIsLoading] = useState(false);
+  const { videos, isLoading, error, refetch } = useVideos();
 
   const onCatChanged = (category: string) => {
     console.log("category changed", category);
@@ -26,9 +24,17 @@ const Page = (props: Props) => {
         <Header />
         <SearchBar />
         <RecommendedChannels />
-        {isLoading ? <ActivityIndicator size="large" /> : <PopularVideos />}
-        <Categories onCategoryChanged={onCatChanged} />
-        <VideoList videos={videos} />
+        {isLoading ? (
+          <ActivityIndicator size="large" />
+        ) : error ? (
+          <Text>Error: {error.message}</Text>
+        ) : (
+          <>
+            <PopularVideos />
+            <Categories onCategoryChanged={onCatChanged} />
+            <VideoList videos={videos} />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

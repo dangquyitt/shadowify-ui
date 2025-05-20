@@ -1,8 +1,11 @@
 import { Colors } from "@/constants/Colors";
+import { useSegments } from "@/hooks/useSegments";
+import { Segment } from "@/types/segment";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   SafeAreaView,
   ScrollView,
@@ -13,34 +16,31 @@ import {
 } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
 
+// Will be replaced with actual user data in a future implementation
 const MOCK_USER = {
   name: "Dina OG kpop stan since 1998",
   avatar:
     "https://yt3.ggpht.com/ytc/AIdro_nF4i4VwE6w0wYw6KZ2Jg5wLw=s88-c-k-c0x00ffffff-no-rj",
 };
 
-const MOCK_TRANSCRIPT = [
-  {
-    id: "1",
-    text: "Sup y'all welcome back to another video by me Dina OG kpop stan since 1998",
-    highlight: true,
-  },
-  { id: "2", text: "So we know kpop comebacks have been very crazy lately" },
-  {
-    id: "3",
-    text: "I mean kpop activity is just crazy in general but this year and this month has been crazy and",
-  },
-  {
-    id: "4",
-    text: "One comeback that I have specifically been waiting for ever since their debut of fearless is the seraphims",
-  },
-  { id: "5", text: "So I still don't know a name to a face yet because me" },
-];
-
-const YOUTUBE_VIDEO_ID = "pyf8cbqyfPs";
-
 export default function VideoDetailScreen() {
-  const [currentLine, setCurrentLine] = useState("1");
+  const playerRef = useRef<any>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const params = useLocalSearchParams();
+  const videoId = typeof params.videoId === "string" ? params.videoId : "";
+
+  const {
+    video,
+    isLoading: isLoadingVideo,
+    error: videoError,
+  } = useVideo(videoId);
+  const {
+    segments,
+    isLoading: isLoadingSegments,
+    error: segmentsError,
+  } = useSegments(videoId);
+
+  const [currentLine, setCurrentLine] = useState<string>("");
   const [paused, setPaused] = useState(true);
   const [showSpeed, setShowSpeed] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1.0);
@@ -48,6 +48,29 @@ export default function VideoDetailScreen() {
   const [dictionaryWord, setDictionaryWord] = useState<string | null>(null);
   const [liveSubActive, setLiveSubActive] = useState(false);
   const [repeatActive, setRepeatActive] = useState(false);
+
+  // Set current line to first segment when segments load
+  useEffect(() => {
+    if (segments.length > 0 && !currentLine) {
+      setCurrentLine(segments[0].id);
+    }
+  }, [segments]);
+
+  // Luôn cập nhật currentLine khi video play (không cần bật liveSubActive)
+  useEffect(() => {
+    if (!segments.length) return;
+    // Find the segment that matches currentTime
+    const found = segments.find(
+      (seg) =>
+        typeof seg.start_sec === "number" &&
+        typeof seg.end_sec === "number" &&
+        currentTime >= seg.start_sec &&
+        currentTime < seg.end_sec
+    );
+    if (found && found.id !== currentLine) {
+      setCurrentLine(found.id);
+    }
+  }, [currentTime, segments]);
 
   // Translate modal state
   const [showTranslate, setShowTranslate] = useState(false);
@@ -70,6 +93,15 @@ export default function VideoDetailScreen() {
     setShowTranslate(true);
   }
 
+  // Seek video to segment start when clicking transcript
+  function handleTranscriptLinePress(segment: Segment) {
+    setCurrentLine(segment.id);
+    if (playerRef.current && typeof segment.start_sec === "number") {
+      playerRef.current.seekTo(segment.start_sec, true);
+      setPaused(false);
+    }
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
@@ -82,7 +114,7 @@ export default function VideoDetailScreen() {
           <Feather name="arrow-left" size={24} color={Colors.softText} />
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={2}>
-          A RETIRED DANCER'S POV— LE SSERAFIM "ANTIFRAGILE" M/V
+          {video ? video.title : "Loading..."}
         </Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity>
@@ -97,22 +129,51 @@ export default function VideoDetailScreen() {
 
       {/* Video Player */}
       <View style={styles.videoBox}>
-        <YoutubePlayer
-          height={VIDEO_HEIGHT}
-          width={"100%"}
-          videoId={YOUTUBE_VIDEO_ID}
-          play={!paused}
-          initialPlayerParams={{
-            controls: false,
-            modestbranding: true,
-            showinfo: false,
-            rel: false,
-            fs: false,
-            iv_load_policy: 3,
-            cc_load_policy: 0,
-            disablekb: true,
-          }}
-        />
+        {isLoadingVideo ? (
+          <View
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+              height: VIDEO_HEIGHT,
+              backgroundColor: Colors.black,
+            }}
+          >
+            <ActivityIndicator size="large" color={Colors.tint} />
+          </View>
+        ) : videoError ? (
+          <View
+            style={{
+              justifyContent: "center",
+              alignItems: "center",
+              height: VIDEO_HEIGHT,
+              backgroundColor: Colors.black,
+            }}
+          >
+            <Text style={{ color: Colors.white }}>Error loading video</Text>
+          </View>
+        ) : video ? (
+          <YoutubePlayer
+            ref={playerRef}
+            height={VIDEO_HEIGHT}
+            width={"100%"}
+            videoId={video.youtube_id}
+            play={!paused}
+            playbackRate={playbackRate}
+            initialPlayerParams={{
+              controls: false,
+              modestbranding: true,
+              showinfo: false,
+              rel: false,
+              fs: false,
+              iv_load_policy: 3,
+              cc_load_policy: 0,
+              disablekb: true,
+            }}
+            onProgress={({ currentTime: t }) => {
+              setCurrentTime(t);
+            }}
+          />
+        ) : null}
       </View>
 
       {/* Scrollable Content (Transcript, Controls, Modals) */}
@@ -124,16 +185,40 @@ export default function VideoDetailScreen() {
             open the dictionary, or click the translation icon to translate the
             entire sentence
           </Text>
-          {MOCK_TRANSCRIPT.map((line) => (
-            <TranscriptLine
-              key={line.id}
-              text={line.text}
-              isActive={currentLine === line.id}
-              onPressLine={() => setCurrentLine(line.id)}
-              onWordPress={handleWordPress}
-              onTranslate={handleTranslate}
-            />
-          ))}
+
+          {isLoadingSegments ? (
+            <View style={{ paddingVertical: 20, alignItems: "center" }}>
+              <ActivityIndicator size="large" color={Colors.tint} />
+              <Text style={{ marginTop: 10, color: Colors.softText }}>
+                Loading transcript...
+              </Text>
+            </View>
+          ) : segmentsError ? (
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <Text style={{ color: "red" }}>Error loading transcript</Text>
+              <Text style={{ color: Colors.softText, marginTop: 8 }}>
+                {segmentsError.message}
+              </Text>
+            </View>
+          ) : segments.length === 0 ? (
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <Text style={{ color: Colors.softText }}>
+                No transcript available for this video
+              </Text>
+            </View>
+          ) : (
+            segments.map((segment) => (
+              <TranscriptLine
+                key={segment.id}
+                text={segment.content}
+                isActive={currentLine === segment.id}
+                onPressLine={() => handleTranscriptLinePress(segment)}
+                onWordPress={handleWordPress}
+                onTranslate={handleTranslate}
+                segment={segment}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -177,6 +262,7 @@ export default function VideoDetailScreen() {
       {showTranslate && (
         <TranslateModal
           source={sourceText}
+          videoId={video?.id || ""}
           onClose={() => setShowTranslate(false)}
         />
       )}
@@ -364,12 +450,14 @@ function TranscriptLine({
   onPressLine,
   onWordPress,
   onTranslate,
+  segment,
 }: {
   text: string;
   isActive?: boolean;
   onPressLine?: () => void;
   onWordPress?: (word: string) => void;
   onTranslate?: (text: string) => void;
+  segment?: Segment;
 }) {
   const words = text.split(" ");
   return (
@@ -401,15 +489,18 @@ function TranscriptLine({
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
-            router.push({
-              pathname: "/shadowing-practice",
-              params: {
-                videoId: YOUTUBE_VIDEO_ID,
-                transcript: text,
-                start: 2,
-                end: 4,
-              },
-            });
+            if (segment) {
+              // Use the correct pathname based on your app's routing structure
+              router.push({
+                pathname: "/(screens)/video-detail", // Update this to the correct shadowing practice path
+                params: {
+                  videoId: segment.video_id,
+                  transcript: text,
+                  start: segment.start_sec,
+                  end: segment.end_sec,
+                },
+              });
+            }
           }}
           style={styles.shadowingIcon}
         >
@@ -422,13 +513,16 @@ function TranscriptLine({
 
 const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 
+import { useVideo } from "@/hooks/useVideos";
 import { MockTranslateAPI } from "../../components/MockTranslateAPI";
 
 function TranslateModal({
   source,
+  videoId,
   onClose,
 }: {
   source: string;
+  videoId: string;
   onClose: () => void;
 }) {
   const { router } = require("expo-router");
@@ -461,15 +555,18 @@ function TranslateModal({
               <TouchableOpacity
                 onPress={() => {
                   onClose();
-                  router.push({
-                    pathname: "/shadowing-practice",
-                    params: {
-                      videoId: YOUTUBE_VIDEO_ID,
-                      transcript: source,
-                      start: 2,
-                      end: 4,
-                    },
-                  });
+                  // Navigate to the appropriate screen
+                  if (videoId) {
+                    router.push({
+                      pathname: "/(screens)/video-detail", // Update with correct path when shadowing-practice is implemented
+                      params: {
+                        videoId: videoId,
+                        transcript: source,
+                        start: 2,
+                        end: 4,
+                      },
+                    });
+                  }
                 }}
                 style={{ marginRight: 16 }}
                 accessibilityLabel="Shadowing"

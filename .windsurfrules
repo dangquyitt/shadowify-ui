@@ -34,3 +34,11 @@
 - Implement dark mode support using Expo's useColorScheme.
 - Ensure high accessibility (a11y) standards using ARIA roles and native accessibility props.
 - Use react-native-reanimated and react-native-gesture-handler for performant animations and gestures.
+
+# State Management & Logic
+
+- Use Zustand for state management.
+
+# Data Fetching & Forms
+
+- Use Axios for frontend data fetching.

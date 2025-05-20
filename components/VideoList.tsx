@@ -33,7 +33,7 @@ const VideoList = ({ videos }: Props) => {
           onPress={() =>
             router.push({
               pathname: "/(screens)/video-detail",
-              params: { videoId: item.videoId },
+              params: { videoId: item.id },
             })
           }
         >
@@ -44,7 +44,7 @@ const VideoList = ({ videos }: Props) => {
             ]}
           >
             <Image
-              source={{ uri: item.thumbnailURL }}
+              source={{ uri: item.thumbnail }}
               style={[
                 styles.itemImg,
                 { width: thumbWidth, height: thumbHeight },
@@ -52,17 +52,15 @@ const VideoList = ({ videos }: Props) => {
               resizeMode="cover"
             />
             <View style={styles.durationOverlay}>
-              <Text style={styles.durationText}>{item.duration}</Text>
+              <Text style={styles.durationText}>{item.duration_string}</Text>
             </View>
           </View>
           <View style={styles.itemInfo}>
             <Text style={styles.itemTitle} numberOfLines={2}>
               {item.title}
             </Text>
-            <Text style={styles.channelName}>{item.channelName}</Text>
-            <Text style={styles.metaInfo}>
-              {item.views.toLocaleString()} views • {item.publishedAt}
-            </Text>
+            <Text style={styles.channelName}>{item.title}</Text>
+            <Text style={styles.metaInfo}>{item.title}</Text>
           </View>
         </TouchableOpacity>
       ))}

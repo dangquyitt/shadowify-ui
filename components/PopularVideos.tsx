@@ -8,6 +8,7 @@ import {
   NativeSyntheticEvent,
   StyleSheet,
   Text,
+  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -35,26 +36,28 @@ const PopularVideos = () => {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onMomentumScrollEnd}
         renderItem={({ item }) => (
-          <View style={{ alignItems: "center", width }}>
-            <ImageBackground
-              source={{ uri: item.thumbnailURL }}
-              style={[
-                styles.popularCard,
-                {
-                  width: width - 32,
-                  height: ((width - 32) * 9) / 16,
-                },
-              ]}
-              imageStyle={styles.popularCardImage}
-            >
-              <View style={styles.overlay} />
-              <View style={styles.popularContent}>
-                <Text style={styles.popularTitle} numberOfLines={2}>
-                  {item.title}
-                </Text>
-              </View>
-            </ImageBackground>
-          </View>
+          <TouchableOpacity>
+            <View style={{ alignItems: "center", width }}>
+              <ImageBackground
+                source={{ uri: item.thumbnailURL }}
+                style={[
+                  styles.popularCard,
+                  {
+                    width: width - 32,
+                    height: ((width - 32) * 9) / 16,
+                  },
+                ]}
+                imageStyle={styles.popularCardImage}
+              >
+                <View style={styles.overlay} />
+                <View style={styles.popularContent}>
+                  <Text style={styles.popularTitle} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                </View>
+              </ImageBackground>
+            </View>
+          </TouchableOpacity>
         )}
       />
       <Pagination items={mockVideos} paginationIndex={currentIndex} />
