@@ -178,6 +178,20 @@ export default function VideoDetailScreen() {
     }
   }, [liveSubActive, currentLine, segments, scrollViewHeight]);
 
+  const handleMicPress = (segment: Segment) => {
+    if (segment) {
+      router.push({
+        pathname: "/(screens)/shadowing-practice",
+        params: {
+          videoId: segment.video_id,
+          transcript: segment.content,
+          start: segment.start_sec?.toString() || "0",
+          end: segment.end_sec?.toString() || "",
+        },
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
@@ -332,6 +346,7 @@ export default function VideoDetailScreen() {
                 onWordPress={handleWordPress}
                 onTranslate={handleTranslate}
                 segment={segment}
+                onMicPress={handleMicPress}
               />
             ))
           )}
@@ -602,6 +617,7 @@ function TranscriptLine({
   onWordPress,
   onTranslate,
   segment,
+  onMicPress,
 }: {
   text: string;
   isActive?: boolean;
@@ -609,6 +625,7 @@ function TranscriptLine({
   onWordPress?: (word: string) => void;
   onTranslate?: (text: string) => void;
   segment?: Segment;
+  onMicPress?: (segment: Segment) => void;
 }) {
   const words = text.split(" ");
 
@@ -662,9 +679,9 @@ function TranscriptLine({
         <TouchableOpacity
           onPress={() => {
             if (segment) {
-              // Use the correct pathname based on your app's routing structure
+              // Navigate to shadowing practice screen
               router.push({
-                pathname: "/(screens)/video-detail", // Update this to the correct shadowing practice path
+                pathname: "/(screens)/shadowing-practice",
                 params: {
                   videoId: segment.video_id,
                   transcript: text,
