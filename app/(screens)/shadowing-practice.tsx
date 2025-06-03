@@ -67,15 +67,19 @@ export default function ShadowingPracticeScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          accessibilityLabel="Go back"
-        >
-          <Feather name="arrow-left" size={24} color={Colors.black} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shadowing Practice</Text>
-        <View style={{ width: 30 }} />
+        <View style={styles.headerLeftBlock}>
+          <TouchableOpacity
+            style={styles.backBtnBlock}
+            onPress={() => router.back()}
+            accessibilityLabel="Go back"
+          >
+            <Feather name="arrow-left" size={24} color={Colors.black} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerCenterBlock}>
+          <Text style={styles.headerTitle}>Shadowing Practice</Text>
+        </View>
+        <View style={{ width: 48 }} />
       </View>
 
       {/* Video Player */}
@@ -195,8 +199,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.background,
   },
-  backButton: {
+  headerLeftBlock: {
+    width: 48,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  backBtnBlock: {
     padding: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    elevation: 2,
+  },
+  headerCenterBlock: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 18,

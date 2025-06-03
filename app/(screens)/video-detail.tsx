@@ -23,6 +23,10 @@ const MOCK_USER = {
     "https://yt3.ggpht.com/ytc/AIdro_nF4i4VwE6w0wYw6KZ2Jg5wLw=s88-c-k-c0x00ffffff-no-rj",
 };
 
+export const options = {
+  headerShown: false,
+};
+
 export default function VideoDetailScreen() {
   const playerRef = useRef<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -106,16 +110,21 @@ export default function VideoDetailScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={24} color={Colors.softText} />
-        </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={2}>
-          {video ? video.title : "Loading..."}
-        </Text>
+        <View style={styles.headerLeftBlock}>
+          <TouchableOpacity
+            style={styles.backBtnBlock}
+            onPress={() => router.back()}
+            accessibilityLabel="Back"
+          >
+            <Feather name="arrow-left" size={24} color={Colors.softText} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.headerCenterBlock}>
+          <Text style={styles.title} numberOfLines={2}>
+            {video ? video.title : "Loading..."}
+          </Text>
+          <Text style={styles.userName}>{MOCK_USER.name}</Text>
+        </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity>
             <Ionicons name="heart-outline" size={24} color={Colors.tint} />
@@ -124,7 +133,6 @@ export default function VideoDetailScreen() {
             <Feather name="share-2" size={22} color={Colors.softText} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.userName}>{MOCK_USER.name}</Text>
       </View>
 
       {/* Video Player */}
@@ -589,15 +597,22 @@ function TranslateModal({
 }
 
 const styles = StyleSheet.create({
-  backBtn: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    zIndex: 10,
+  headerLeftBlock: {
+    width: 48,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  backBtnBlock: {
     padding: 8,
     backgroundColor: Colors.white,
     borderRadius: 20,
     elevation: 2,
+  },
+  headerCenterBlock: {
+    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    marginLeft: 8,
   },
   // Shadowing Controls Styles
   shadowingControlsBox: {
@@ -811,7 +826,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     borderRadius: 8,
   },
-  transcriptLineActive: { backgroundColor: Colors.background },
+  transcriptLineActive: {
+    // Remove background color, add shadow for active transcript
+    backgroundColor: Colors.white,
+    shadowColor: Colors.tint,
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    borderWidth: 1.5,
+    borderColor: Colors.tint,
+  },
   transcriptText: { flex: 1, color: Colors.black, fontSize: 15 },
   underlineWord: {
     textDecorationLine: "underline",
