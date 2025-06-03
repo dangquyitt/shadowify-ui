@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useSegments } from "@/hooks/useSegments";
+import { useVideo } from "@/hooks/useVideos";
 import { Segment } from "@/types/segment";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -15,6 +16,7 @@ import {
   View,
 } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
+import { MockTranslateAPI } from "../../components/MockTranslateAPI";
 
 // Will be replaced with actual user data in a future implementation
 const MOCK_USER = {
@@ -81,10 +83,11 @@ export default function VideoDetailScreen() {
   const [translateText, setTranslateText] = useState<string>("");
   const [sourceText, setSourceText] = useState<string>("");
 
-  // Mock duration/position
-  const duration = 1080; // 18:00
-  const position = 2; // 00:02
-  const percent = (position / duration) * 100;
+  // Real duration/position from YoutubePlayer
+  const [duration, setDuration] = useState<number>(0);
+  // position = currentTime
+  const position = currentTime;
+  const percent = duration > 0 ? (position / duration) * 100 : 0;
 
   function handleWordPress(word: string) {
     setDictionaryWord(word);
@@ -97,14 +100,83 @@ export default function VideoDetailScreen() {
     setShowTranslate(true);
   }
 
+  // Handle seeking to a specific time in the video
+  function handleSeek(time: number) {
+    if (playerRef.current && typeof time === "number") {
+      playerRef.current.seekTo(time, true);
+      setCurrentTime(time);
+
+      // Also update the current line based on the seek position
+      if (segments.length) {
+        const foundSegment = segments.find(
+          (seg) =>
+            typeof seg.start_sec === "number" &&
+            typeof seg.end_sec === "number" &&
+            time >= seg.start_sec &&
+            time < seg.end_sec
+        );
+
+        if (foundSegment) {
+          setCurrentLine(foundSegment.id);
+        }
+      }
+
+      // Optionally resume playback after seeking
+      setPaused(false);
+    }
+  }
+
   // Seek video to segment start when clicking transcript
   function handleTranscriptLinePress(segment: Segment) {
     setCurrentLine(segment.id);
     if (playerRef.current && typeof segment.start_sec === "number") {
       playerRef.current.seekTo(segment.start_sec, true);
+      setCurrentTime(segment.start_sec);
       setPaused(false);
     }
   }
+
+  // Periodically fetch current time from YouTube player
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (playerRef.current) {
+        const elapsed_sec = await playerRef.current.getCurrentTime(); // Get current time in seconds
+
+        // Update currentTime and calculate percent
+        setCurrentTime(elapsed_sec);
+        const calculatedPercent =
+          duration > 0 ? (elapsed_sec / duration) * 100 : 0;
+      }
+    }, 100); // Refresh every 100ms
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [duration]);
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+
+  const handleScrollViewLayout = (event: any) => {
+    const { height } = event.nativeEvent.layout;
+    setScrollViewHeight(height);
+  };
+
+  // Scroll to the highlighted transcript line when liveSubActive is enabled
+  useEffect(() => {
+    if (liveSubActive && currentLine) {
+      const index = segments.findIndex((seg) => seg.id === currentLine);
+      if (index !== -1 && scrollViewRef.current) {
+        const lineHeight = 50; // Assuming each transcript line has a height of 50
+        const scrollToY =
+          index * lineHeight - scrollViewHeight / 2 + lineHeight / 2;
+        scrollViewRef.current.scrollTo({
+          y: Math.max(scrollToY, 0), // Ensure it doesn't scroll to a negative position
+          animated: true,
+        });
+      }
+    }
+  }, [liveSubActive, currentLine, segments, scrollViewHeight]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -179,13 +251,49 @@ export default function VideoDetailScreen() {
             }}
             onProgress={({ currentTime: t }) => {
               setCurrentTime(t);
+
+              // Calculate the percentage of progress directly
+              const percent = duration > 0 ? (t / duration) * 100 : 0;
+              console.log("Current Time:", t);
+              console.log("Duration:", duration);
+              console.log("Percent:", percent);
+
+              // Fetch duration if not already set
+              if (playerRef.current && (!duration || duration < 1)) {
+                playerRef.current.getDuration?.().then((d: number) => {
+                  if (typeof d === "number" && d > 0) setDuration(d);
+                });
+              }
+            }}
+            onReady={async () => {
+              if (playerRef.current) {
+                try {
+                  const d = await playerRef.current.getDuration?.();
+                  if (typeof d === "number" && d > 0) setDuration(d);
+                } catch {}
+              }
+            }}
+            onChangeState={async (event) => {
+              if (
+                (event === "playing" || event === "paused") &&
+                playerRef.current
+              ) {
+                try {
+                  const d = await playerRef.current.getDuration?.();
+                  if (typeof d === "number" && d > 0) setDuration(d);
+                } catch {}
+              }
             }}
           />
         ) : null}
       </View>
 
       {/* Scrollable Content (Transcript, Controls, Modals) */}
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        ref={scrollViewRef}
+        onLayout={handleScrollViewLayout}
+      >
         {/* Transcript */}
         <View style={styles.transcriptBox}>
           <Text style={styles.transcriptHint}>
@@ -244,6 +352,7 @@ export default function VideoDetailScreen() {
         repeatActive={repeatActive}
         onToggleRepeat={() => setRepeatActive((v) => !v)}
         speedActive={showSpeed}
+        onSeek={handleSeek}
       />
 
       {/* Speed Modal */}
@@ -291,6 +400,7 @@ function ShadowingControls({
   repeatActive,
   onToggleRepeat,
   speedActive,
+  onSeek,
 }: {
   paused: boolean;
   onTogglePause: () => void;
@@ -304,6 +414,7 @@ function ShadowingControls({
   repeatActive: boolean;
   onToggleRepeat: () => void;
   speedActive: boolean;
+  onSeek: (time: number) => void;
 }) {
   function format(sec: number) {
     const m = Math.floor(sec / 60)
@@ -314,13 +425,45 @@ function ShadowingControls({
       .padStart(2, "0");
     return `${m}:${s}`;
   }
+
+  // Handle timeline seeking
+  const handleProgressBarPress = (event: any) => {
+    // Get touch position relative to progress bar
+    const { locationX, pageX } = event.nativeEvent;
+    const progressBarEl = event.currentTarget;
+
+    // Get width of progress bar for percentage calculation
+    progressBarEl.measure(
+      (
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        pageX: number,
+        pageY: number
+      ) => {
+        // Calculate the percentage of the touch position
+        const seekPercent = locationX / width;
+        // Calculate the target time in seconds
+        const seekTime = seekPercent * duration;
+        // Call the parent's seek function
+        onSeek(seekTime);
+      }
+    );
+  };
+
   return (
     <View style={styles.shadowingControlsBox}>
       <View style={styles.shadowingProgressRow}>
         <Text style={styles.timeText}>{format(position)}</Text>
-        <View style={styles.progressBar}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.progressBar}
+          onPress={handleProgressBarPress}
+        >
           <View style={[styles.progress, { width: `${percent}%` }]} />
-        </View>
+          <View style={[styles.progressHandle, { left: `${percent}%` }]} />
+        </TouchableOpacity>
         <Text style={styles.timeText}>{format(duration)}</Text>
       </View>
       <View style={styles.shadowingButtonRow}>
@@ -468,12 +611,33 @@ function TranscriptLine({
   segment?: Segment;
 }) {
   const words = text.split(" ");
+
+  // Format time to MM:SS
+  const formatTime = (seconds: number | undefined): string => {
+    if (typeof seconds !== "number") return "";
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const startTime = formatTime(segment?.start_sec);
+
   return (
     <TouchableOpacity
+      id={`transcript-line-${segment.id}`} // Add id for scrolling
       style={[styles.transcriptLine, isActive && styles.transcriptLineActive]}
       onPress={onPressLine}
       activeOpacity={0.7}
     >
+      {segment && typeof segment.start_sec === "number" && (
+        <View style={styles.segmentTimeContainer}>
+          <Text style={styles.segmentTimeText}>{startTime}</Text>
+        </View>
+      )}
       <Text style={styles.transcriptText}>
         {words.map((word, idx) => (
           <Text
@@ -518,11 +682,6 @@ function TranscriptLine({
     </TouchableOpacity>
   );
 }
-
-const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
-
-import { useVideo } from "@/hooks/useVideos";
-import { MockTranslateAPI } from "../../components/MockTranslateAPI";
 
 function TranslateModal({
   source,
@@ -596,6 +755,8 @@ function TranslateModal({
   );
 }
 
+const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
+
 const styles = StyleSheet.create({
   headerLeftBlock: {
     width: 48,
@@ -660,6 +821,49 @@ const styles = StyleSheet.create({
     color: Colors.softText,
     textAlign: "center",
   },
+  progressBar: {
+    flex: 1,
+    height: 10,
+    backgroundColor: Colors.background,
+    borderRadius: 6,
+    marginHorizontal: 8,
+    overflow: "visible", // Changed from "hidden" to allow the handle to be visible
+    shadowColor: Colors.tint,
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.tint + "22",
+    position: "relative", // Added to position the handle
+  },
+  progress: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    height: "100%",
+    backgroundColor: Colors.tint,
+    borderRadius: 6,
+    // Optionally add a gradient effect if you use a gradient lib
+  },
+  progressHandle: {
+    position: "absolute",
+    top: -5,
+    marginLeft: -8, // Half of width to center the handle
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.white,
+    borderWidth: 2,
+    borderColor: Colors.tint,
+    shadowColor: Colors.black,
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 4,
+    zIndex: 10,
+  },
+  controlBtn: { marginHorizontal: 6 },
 
   // Speed Modal Styles
   speedModalOverlay: {
@@ -825,6 +1029,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 4,
     borderRadius: 8,
+    position: "relative", // Added to position the time badge
   },
   transcriptLineActive: {
     // Remove background color, add shadow for active transcript
@@ -866,14 +1071,18 @@ const styles = StyleSheet.create({
     minWidth: 40,
     textAlign: "center",
   },
-  progressBar: {
-    flex: 1,
-    height: 4,
+  segmentTimeContainer: {
+    marginRight: 8,
     backgroundColor: Colors.background,
-    borderRadius: 2,
-    marginHorizontal: 8,
-    overflow: "hidden",
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 4,
+    minWidth: 40,
+    alignItems: "center",
   },
-  progress: { height: 4, backgroundColor: Colors.tint, borderRadius: 2 },
-  controlBtn: { marginHorizontal: 6 },
+  segmentTimeText: {
+    fontSize: 12,
+    color: Colors.softText,
+    fontWeight: "500",
+  },
 });
