@@ -1,3 +1,8 @@
+import DictionaryModal from "@/components/dictionary-modal";
+import ShadowingControls from "@/components/shadowing-controls";
+import SpeedModal from "@/components/speed-modal";
+import TranscriptLine from "@/components/transcript-line";
+import TranslateModal from "@/components/translate-modal";
 import { Colors } from "@/constants/Colors";
 import { useSegments } from "@/hooks/useSegments";
 import { useVideo } from "@/hooks/useVideos";
@@ -8,6 +13,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  findNodeHandle,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -16,7 +22,6 @@ import {
   View,
 } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
-import { MockTranslateAPI } from "../../components/MockTranslateAPI";
 
 // Will be replaced with actual user data in a future implementation
 const MOCK_USER = {
@@ -34,6 +39,7 @@ export default function VideoDetailScreen() {
   const [currentTime, setCurrentTime] = useState(0);
   const params = useLocalSearchParams();
   const videoId = typeof params.videoId === "string" ? params.videoId : "";
+  const lineRefs = useRef<Record<string, View | null>>({});
 
   const {
     video,
@@ -61,22 +67,6 @@ export default function VideoDetailScreen() {
       setCurrentLine(segments[0].id);
     }
   }, [segments]);
-
-  // Luôn cập nhật currentLine khi video play (không cần bật liveSubActive)
-  useEffect(() => {
-    if (!segments.length) return;
-    // Find the segment that matches currentTime
-    const found = segments.find(
-      (seg) =>
-        typeof seg.start_sec === "number" &&
-        typeof seg.end_sec === "number" &&
-        currentTime >= seg.start_sec &&
-        currentTime < seg.end_sec
-    );
-    if (found && found.id !== currentLine) {
-      setCurrentLine(found.id);
-    }
-  }, [currentTime, segments]);
 
   // Translate modal state
   const [showTranslate, setShowTranslate] = useState(false);
@@ -183,7 +173,7 @@ export default function VideoDetailScreen() {
       router.push({
         pathname: "/(screens)/shadowing-practice",
         params: {
-          videoId: segment.video_id,
+          youtubeId: video.youtube_id,
           transcript: segment.content,
           start: segment.start_sec?.toString() || "0",
           end: segment.end_sec?.toString() || "",
@@ -191,6 +181,26 @@ export default function VideoDetailScreen() {
       });
     }
   };
+  useEffect(() => {
+    if (liveSubActive && currentLine && scrollViewRef.current) {
+      const targetRef = lineRefs.current[currentLine];
+      const scrollViewHandle = findNodeHandle(scrollViewRef.current);
+
+      if (
+        targetRef &&
+        typeof targetRef.measureLayout === "function" &&
+        scrollViewHandle
+      ) {
+        targetRef.measureLayout(scrollViewHandle, (x, y, width, height) => {
+          const scrollToY = y - scrollViewHeight / 2 + height / 2;
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(scrollToY, 0),
+            animated: true,
+          });
+        });
+      }
+    }
+  }, [liveSubActive, currentLine, scrollViewHeight]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -340,6 +350,9 @@ export default function VideoDetailScreen() {
             segments.map((segment) => (
               <TranscriptLine
                 key={segment.id}
+                ref={(ref) => {
+                  lineRefs.current[segment.id] = ref;
+                }}
                 text={segment.content}
                 isActive={currentLine === segment.id}
                 onPressLine={() => handleTranscriptLinePress(segment)}
@@ -402,376 +415,6 @@ export default function VideoDetailScreen() {
   );
 }
 
-function ShadowingControls({
-  paused,
-  onTogglePause,
-  duration,
-  position,
-  percent,
-  playbackRate,
-  onShowSpeed,
-  liveSubActive,
-  onToggleLiveSub,
-  repeatActive,
-  onToggleRepeat,
-  speedActive,
-  onSeek,
-}: {
-  paused: boolean;
-  onTogglePause: () => void;
-  duration: number;
-  position: number;
-  percent: number;
-  playbackRate: number;
-  onShowSpeed: () => void;
-  liveSubActive: boolean;
-  onToggleLiveSub: () => void;
-  repeatActive: boolean;
-  onToggleRepeat: () => void;
-  speedActive: boolean;
-  onSeek: (time: number) => void;
-}) {
-  function format(sec: number) {
-    const m = Math.floor(sec / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = Math.floor(sec % 60)
-      .toString()
-      .padStart(2, "0");
-    return `${m}:${s}`;
-  }
-
-  // Handle timeline seeking
-  const handleProgressBarPress = (event: any) => {
-    // Get touch position relative to progress bar
-    const { locationX, pageX } = event.nativeEvent;
-    const progressBarEl = event.currentTarget;
-
-    // Get width of progress bar for percentage calculation
-    progressBarEl.measure(
-      (
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        pageX: number,
-        pageY: number
-      ) => {
-        // Calculate the percentage of the touch position
-        const seekPercent = locationX / width;
-        // Calculate the target time in seconds
-        const seekTime = seekPercent * duration;
-        // Call the parent's seek function
-        onSeek(seekTime);
-      }
-    );
-  };
-
-  return (
-    <View style={styles.shadowingControlsBox}>
-      <View style={styles.shadowingProgressRow}>
-        <Text style={styles.timeText}>{format(position)}</Text>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.progressBar}
-          onPress={handleProgressBarPress}
-        >
-          <View style={[styles.progress, { width: `${percent}%` }]} />
-          <View style={[styles.progressHandle, { left: `${percent}%` }]} />
-        </TouchableOpacity>
-        <Text style={styles.timeText}>{format(duration)}</Text>
-      </View>
-      <View style={styles.shadowingButtonRow}>
-        <View style={styles.shadowingBtnCol}>
-          <TouchableOpacity
-            style={
-              liveSubActive ? styles.shadowingBtnActive : styles.shadowingBtn
-            }
-            onPress={onToggleLiveSub}
-          >
-            <Feather
-              name="sun"
-              size={28}
-              color={liveSubActive ? Colors.tint : Colors.softText}
-            />
-          </TouchableOpacity>
-          <Text style={styles.shadowingBtnLabel}>Live Sub</Text>
-        </View>
-        <View style={styles.shadowingBtnCol}>
-          <TouchableOpacity onPress={onShowSpeed} style={styles.shadowingBtn}>
-            <Feather
-              name="activity"
-              size={28}
-              color={speedActive ? Colors.tint : Colors.softText}
-            />
-          </TouchableOpacity>
-          <Text style={styles.shadowingBtnLabel}>Speed</Text>
-        </View>
-        <View style={styles.shadowingBtnCol}>
-          <TouchableOpacity
-            style={
-              repeatActive ? styles.shadowingBtnActive : styles.shadowingBtn
-            }
-            onPress={onToggleRepeat}
-          >
-            <Feather
-              name="repeat"
-              size={28}
-              color={repeatActive ? Colors.tint : Colors.softText}
-            />
-          </TouchableOpacity>
-          <Text style={styles.shadowingBtnLabel}>Repeat</Text>
-        </View>
-        <View style={styles.shadowingBtnCol}>
-          <TouchableOpacity onPress={onTogglePause} style={styles.shadowingBtn}>
-            <Feather
-              name={paused ? "play" : "pause"}
-              size={28}
-              color={!paused ? Colors.tint : Colors.softText}
-            />
-          </TouchableOpacity>
-          <Text style={styles.shadowingBtnLabel}>
-            {paused ? "Paused" : "Playing"}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function SpeedModal({
-  value,
-  onSelect,
-  onClose,
-}: {
-  value: number;
-  onSelect: (v: number) => void;
-  onClose: () => void;
-}) {
-  const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-  return (
-    <View style={styles.speedModalOverlay}>
-      <View style={styles.speedModalBox}>
-        {speeds.map((s) => (
-          <TouchableOpacity
-            key={s}
-            onPress={() => onSelect(s)}
-            style={[
-              styles.speedOption,
-              s === value && styles.speedOptionActive,
-            ]}
-          >
-            <Text
-              style={
-                s === value
-                  ? styles.speedOptionActiveText
-                  : styles.speedOptionText
-              }
-            >
-              {s}
-              {s === value ? "  ✓" : ""}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity onPress={onClose} style={styles.speedCloseBtn}>
-          <Text style={styles.speedCloseText}>Close</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function DictionaryModal({
-  word,
-  onClose,
-}: {
-  word: string;
-  onClose: () => void;
-}) {
-  // Mock dictionary data
-  return (
-    <View style={styles.dictModalOverlay}>
-      <View style={styles.dictModalBox}>
-        <Text style={styles.dictWord}>{word}</Text>
-        <Text style={styles.dictPhonetic}>/miː/</Text>
-        <Text style={styles.dictType}>pronoun</Text>
-        <Text style={styles.dictDef}>
-          used, usually as the object of a verb or preposition, to refer to the
-          person speaking or writing.
-        </Text>
-        <Text style={styles.dictExample}>
-          Example: They didn't invite me to the wedding.
-        </Text>
-        <TouchableOpacity onPress={onClose} style={styles.dictCloseBtn}>
-          <Text style={styles.dictCloseText}>Close</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function TranscriptLine({
-  text,
-  isActive,
-  onPressLine,
-  onWordPress,
-  onTranslate,
-  segment,
-  onMicPress,
-}: {
-  text: string;
-  isActive?: boolean;
-  onPressLine?: () => void;
-  onWordPress?: (word: string) => void;
-  onTranslate?: (text: string) => void;
-  segment?: Segment;
-  onMicPress?: (segment: Segment) => void;
-}) {
-  const words = text.split(" ");
-
-  // Format time to MM:SS
-  const formatTime = (seconds: number | undefined): string => {
-    if (typeof seconds !== "number") return "";
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = Math.floor(seconds % 60)
-      .toString()
-      .padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  const startTime = formatTime(segment?.start_sec);
-
-  return (
-    <TouchableOpacity
-      id={`transcript-line-${segment.id}`} // Add id for scrolling
-      style={[styles.transcriptLine, isActive && styles.transcriptLineActive]}
-      onPress={onPressLine}
-      activeOpacity={0.7}
-    >
-      {segment && typeof segment.start_sec === "number" && (
-        <View style={styles.segmentTimeContainer}>
-          <Text style={styles.segmentTimeText}>{startTime}</Text>
-        </View>
-      )}
-      <Text style={styles.transcriptText}>
-        {words.map((word, idx) => (
-          <Text
-            key={idx}
-            style={isActive ? styles.underlineWord : undefined}
-            onPress={() =>
-              onWordPress && onWordPress(word.replace(/[^a-zA-Z']/g, ""))
-            }
-            suppressHighlighting
-          >
-            {word + (idx < words.length - 1 ? " " : "")}
-          </Text>
-        ))}
-      </Text>
-      <View style={styles.translateBox}>
-        <TouchableOpacity
-          style={styles.translateIcon}
-          onPress={() => onTranslate && onTranslate(text)}
-        >
-          <Ionicons name="language-outline" size={18} color={Colors.tint} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            if (segment) {
-              // Navigate to shadowing practice screen
-              router.push({
-                pathname: "/(screens)/shadowing-practice",
-                params: {
-                  videoId: segment.video_id,
-                  transcript: text,
-                  start: segment.start_sec,
-                  end: segment.end_sec,
-                },
-              });
-            }
-          }}
-          style={styles.shadowingIcon}
-        >
-          <Ionicons name="mic-outline" size={18} color={Colors.tint} />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-function TranslateModal({
-  source,
-  videoId,
-  onClose,
-}: {
-  source: string;
-  videoId: string;
-  onClose: () => void;
-}) {
-  const { router } = require("expo-router");
-  const [result, setResult] = React.useState<string | null>(null);
-
-  return (
-    <View style={styles.dictModalOverlay}>
-      <View style={styles.dictModalBox}>
-        <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>
-          Dịch câu
-        </Text>
-        <Text style={{ color: Colors.softText, marginBottom: 8 }}>
-          {source}
-        </Text>
-        {result ? (
-          <>
-            <Text
-              style={{ fontSize: 15, color: Colors.black, marginBottom: 20 }}
-            >
-              {result}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                width: "100%",
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => {
-                  onClose();
-                  // Navigate to the appropriate screen
-                  if (videoId) {
-                    router.push({
-                      pathname: "/(screens)/video-detail", // Update with correct path when shadowing-practice is implemented
-                      params: {
-                        videoId: videoId,
-                        transcript: source,
-                        start: 2,
-                        end: 4,
-                      },
-                    });
-                  }
-                }}
-                style={{ marginRight: 16 }}
-                accessibilityLabel="Shadowing"
-              >
-                <Ionicons name="mic-outline" size={24} color={Colors.tint} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={onClose} accessibilityLabel="Đóng">
-                <Text style={{ color: Colors.tint, fontWeight: "bold" }}>
-                  Đóng
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
-          <MockTranslateAPI text={source} onResult={setResult} />
-        )}
-      </View>
-    </View>
-  );
-}
-
 const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 
 const styles = StyleSheet.create({
@@ -792,216 +435,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 8,
   },
-  // Shadowing Controls Styles
-  shadowingControlsBox: {
-    backgroundColor: Colors.white,
-    borderRadius: 18,
-    marginHorizontal: 8,
-    marginBottom: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  shadowingProgressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  shadowingButtonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 2,
-  },
-  shadowingBtnCol: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  shadowingBtn: {
-    backgroundColor: "transparent",
-    borderRadius: 12,
-    padding: 7,
-  },
-  shadowingBtnActive: {
-    backgroundColor: Colors.background,
-    borderRadius: 12,
-    padding: 7,
-  },
-  shadowingBtnLabel: {
-    marginTop: 2,
-    fontSize: 13,
-    color: Colors.softText,
-    textAlign: "center",
-  },
-  progressBar: {
-    flex: 1,
-    height: 10,
-    backgroundColor: Colors.background,
-    borderRadius: 6,
-    marginHorizontal: 8,
-    overflow: "visible", // Changed from "hidden" to allow the handle to be visible
-    shadowColor: Colors.tint,
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: Colors.tint + "22",
-    position: "relative", // Added to position the handle
-  },
-  progress: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%",
-    backgroundColor: Colors.tint,
-    borderRadius: 6,
-    // Optionally add a gradient effect if you use a gradient lib
-  },
-  progressHandle: {
-    position: "absolute",
-    top: -5,
-    marginLeft: -8, // Half of width to center the handle
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.white,
-    borderWidth: 2,
-    borderColor: Colors.tint,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 4,
-    zIndex: 10,
-  },
-  controlBtn: { marginHorizontal: 6 },
 
-  // Speed Modal Styles
-  speedModalOverlay: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Colors.darkGrey + "99", // semi-transparent overlay
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
-  },
-  speedModalBox: {
-    backgroundColor: Colors.white,
-    borderRadius: 14,
-    padding: 18,
-    minWidth: 120,
-    alignItems: "center",
-    elevation: 8,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  speedOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 22,
-    borderRadius: 8,
-    marginVertical: 2,
-  },
-  speedOptionActive: {
-    backgroundColor: Colors.background,
-  },
-  speedOptionText: {
-    fontSize: 16,
-    color: Colors.black,
-  },
-  speedOptionActiveText: {
-    fontSize: 16,
-    color: Colors.tint,
-    fontWeight: "bold",
-  },
-  speedCloseBtn: {
-    marginTop: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: Colors.background,
-  },
-  speedCloseText: {
-    fontSize: 15,
-    color: Colors.softText,
-    fontWeight: "500",
-  },
-
-  // Dictionary Modal Styles
-  dictModalOverlay: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Colors.darkGrey + "99", // semi-transparent overlay
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 200,
-  },
-  dictModalBox: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    minWidth: 260,
-    maxWidth: 340,
-    alignItems: "flex-start",
-    elevation: 10,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  dictWord: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: Colors.tint,
-    marginBottom: 4,
-  },
-  dictPhonetic: {
-    fontSize: 15,
-    color: Colors.softText,
-    marginBottom: 6,
-  },
-  dictType: {
-    fontSize: 13,
-    color: Colors.darkGrey,
-    marginBottom: 8,
-    fontWeight: "600",
-  },
-  dictDef: {
-    fontSize: 15,
-    color: Colors.black,
-    marginBottom: 6,
-  },
-  dictExample: {
-    fontSize: 14,
-    color: Colors.tint,
-    fontStyle: "italic",
-    marginBottom: 12,
-  },
-  dictCloseBtn: {
-    alignSelf: "flex-end",
-    paddingVertical: 6,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: Colors.background,
-  },
-  dictCloseText: {
-    fontSize: 15,
-    color: Colors.softText,
-    fontWeight: "500",
-  },
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
     flexDirection: "row",
@@ -1039,41 +473,7 @@ const styles = StyleSheet.create({
   userName: { fontWeight: "600", color: Colors.softText },
   transcriptBox: { marginHorizontal: 10, marginBottom: 16 },
   transcriptHint: { color: Colors.softText, fontSize: 13, marginBottom: 8 },
-  transcriptLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.white,
-    padding: 10,
-    marginBottom: 4,
-    borderRadius: 8,
-    position: "relative", // Added to position the time badge
-  },
-  transcriptLineActive: {
-    // Remove background color, add shadow for active transcript
-    backgroundColor: Colors.white,
-    shadowColor: Colors.tint,
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-    borderWidth: 1.5,
-    borderColor: Colors.tint,
-  },
-  transcriptText: { flex: 1, color: Colors.black, fontSize: 15 },
-  underlineWord: {
-    textDecorationLine: "underline",
-    color: Colors.tint,
-    fontWeight: "600",
-  },
-  translateBox: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  translateIcon: { marginVertical: 6 },
-  shadowingIcon: { marginVertical: 6 },
+
   audioControls: {
     flexDirection: "row",
     alignItems: "center",
@@ -1087,19 +487,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     minWidth: 40,
     textAlign: "center",
-  },
-  segmentTimeContainer: {
-    marginRight: 8,
-    backgroundColor: Colors.background,
-    paddingVertical: 2,
-    paddingHorizontal: 5,
-    borderRadius: 4,
-    minWidth: 40,
-    alignItems: "center",
-  },
-  segmentTimeText: {
-    fontSize: 12,
-    color: Colors.softText,
-    fontWeight: "500",
   },
 });

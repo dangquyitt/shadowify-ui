@@ -18,8 +18,8 @@ const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 
 export default function ShadowingPracticeScreen() {
   const router = useRouter();
-  const { videoId, transcript, start, end } = useLocalSearchParams<{
-    videoId: string;
+  const { youtubeId, transcript, start, end } = useLocalSearchParams<{
+    youtubeId: string;
     transcript: string;
     start: string;
     end: string;
@@ -87,7 +87,7 @@ export default function ShadowingPracticeScreen() {
         <YoutubePlayer
           height={VIDEO_HEIGHT}
           play={!isPaused}
-          videoId={videoId || "pyf8cbqyfPs"}
+          videoId={youtubeId}
           onReady={() => setIsPlayerReady(true)}
           initialPlayerParams={{
             loop: true,
