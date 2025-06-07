@@ -7,7 +7,7 @@ interface MarkedTextProps {
 }
 
 /**
- * Component to display text with words highlighted as correct/incorrect
+ * Component to display text with only incorrect words highlighted
  */
 export const MarkedText: React.FC<MarkedTextProps> = ({ markedWords }) => {
   return (
@@ -18,7 +18,8 @@ export const MarkedText: React.FC<MarkedTextProps> = ({ markedWords }) => {
             key={`word-${index}`}
             style={[
               styles.word,
-              item.isCorrect ? styles.correctWord : styles.incorrectWord,
+              // Only apply highlighting styles to incorrect words
+              !item.isCorrect ? styles.incorrectWord : styles.correctWord,
             ]}
           >
             {item.word}
