@@ -27,14 +27,31 @@ export const videoApi = {
   },
 
   /**
-  /**
-   * Fetches a list of videos from the server
+   * Fetches a list of videos from the server with pagination support
+   * @param page - The page number to fetch
+   * @param pageSize - Number of items per page
    * @returns Promise with an array of Video objects
    */
-  getVideos: async (): Promise<Video[]> => {
+  getVideos: async (page: number = 1, pageSize: number = 10): Promise<{videos: Video[], hasMore: boolean}> => {
     try {
-      const response = await api.get<{ data: Video[] }>('/videos');
-      return response.data.data;
+      const response = await api.get<{ 
+        code: string,
+        data: Video[], 
+        pagination: { 
+          page: number, 
+          page_size: number, 
+          total: number 
+        } 
+      }>(`/videos?page=${page}&page_size=${pageSize}`);
+      
+      // Calculate if there are more pages based on total items and current page
+      const totalPages = Math.ceil(response.data.pagination.total / response.data.pagination.page_size);
+      const hasMore = response.data.pagination.page < totalPages;
+      
+      return {
+        videos: response.data.data,
+        hasMore
+      };
     } catch (error) {
       throw error;
     }
