@@ -20,12 +20,15 @@ const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 
 export default function ShadowingPracticeScreen() {
   const router = useRouter();
-  const { youtubeId, transcript, start, end } = useLocalSearchParams<{
+  const { youtubeId, transcript, startSec, endSec } = useLocalSearchParams<{
     youtubeId: string;
     transcript: string;
-    start: string;
-    end: string;
+    startSec: number;
+    endSec: number;
   }>();
+
+  console.log("startSec:", startSec);
+  console.log("endSec:", endSec);
 
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
@@ -37,8 +40,6 @@ export default function ShadowingPracticeScreen() {
     useState<TextComparisonResult | null>(null);
 
   const playerRef = useRef(null);
-  const startTime = parseInt(start, 10) || 0;
-  const endTime = parseInt(end, 10) || undefined;
 
   // Auto-pause video when recording
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function ShadowingPracticeScreen() {
   const handleStateChange = (state: string) => {
     if (state === "ended" && playerRef.current) {
       // Khi video kết thúc, quay lại điểm bắt đầu và tự động phát lại
-      playerRef.current.seekTo(startTime, true);
+      playerRef.current.seekTo(startSec, true);
       setIsPaused(false);
     }
   };
@@ -60,12 +61,12 @@ export default function ShadowingPracticeScreen() {
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval>;
 
-    if (!isPaused && playerRef.current && endTime) {
+    if (!isPaused && playerRef.current && endSec) {
       intervalId = setInterval(async () => {
         try {
           const currentTime = await playerRef.current.getCurrentTime();
-          if (currentTime >= endTime) {
-            playerRef.current.seekTo(startTime, true);
+          if (currentTime >= endSec) {
+            playerRef.current.seekTo(startSec, true);
           }
         } catch (err) {
           console.error("Error checking video position:", err);
@@ -78,7 +79,7 @@ export default function ShadowingPracticeScreen() {
         clearInterval(intervalId);
       }
     };
-  }, [isPaused, endTime, startTime]);
+  }, [isPaused, endSec, startSec]);
 
   const toggleRecording = () => {
     setIsRecording((prev) => !prev);
@@ -137,14 +138,14 @@ export default function ShadowingPracticeScreen() {
             setIsPlayerReady(true);
             // Make sure it starts at the correct position when first loaded
             if (playerRef.current) {
-              playerRef.current.seekTo(startTime, true);
+              playerRef.current.seekTo(startSec, true);
             }
           }}
           onChangeState={handleStateChange}
           initialPlayerParams={{
             loop: false, // We'll handle looping manually for more control
-            start: startTime,
-            end: endTime,
+            start: startSec,
+            end: endSec,
             controls: true, // Sử dụng controls của YouTube
             modestbranding: true,
             showinfo: false,

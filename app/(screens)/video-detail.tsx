@@ -175,8 +175,8 @@ export default function VideoDetailScreen() {
         params: {
           youtubeId: video.youtube_id,
           transcript: segment.content,
-          start: segment.start_sec?.toString() || "0",
-          end: segment.end_sec?.toString() || "",
+          startSec: segment.start_sec,
+          endSec: segment.end_sec,
         },
       });
     }

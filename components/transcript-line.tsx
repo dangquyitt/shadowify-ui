@@ -88,8 +88,8 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
                   params: {
                     youtubeId: youtubeId,
                     transcript: text,
-                    start: segment.start_sec,
-                    end: segment.end_sec,
+                    startSec: segment.start_sec,
+                    endSec: segment.end_sec,
                   },
                 });
               }
