@@ -7,6 +7,7 @@ import React, { forwardRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type TranscriptLineProps = {
+  youtubeId: string;
   text: string;
   isActive?: boolean;
   onPressLine?: () => void;
@@ -19,6 +20,7 @@ type TranscriptLineProps = {
 const TranscriptLine = forwardRef<View, TranscriptLineProps>(
   (
     {
+      youtubeId,
       text,
       isActive,
       onPressLine,
@@ -84,7 +86,7 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
                 router.push({
                   pathname: "/(screens)/shadowing-practice",
                   params: {
-                    videoId: segment.video_id,
+                    youtubeId: youtubeId,
                     transcript: text,
                     start: segment.start_sec,
                     end: segment.end_sec,

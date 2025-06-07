@@ -349,6 +349,7 @@ export default function VideoDetailScreen() {
           ) : (
             segments.map((segment) => (
               <TranscriptLine
+                youtubeId={video.youtube_id}
                 key={segment.id}
                 ref={(ref) => {
                   lineRefs.current[segment.id] = ref;
