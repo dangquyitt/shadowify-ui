@@ -61,17 +61,11 @@ export default function VideoDetailScreen() {
   const [liveSubActive, setLiveSubActive] = useState(false);
   const [repeatActive, setRepeatActive] = useState(false);
 
-  // Set current line to first segment when segments load
-  useEffect(() => {
-    if (segments.length > 0 && !currentLine) {
-      setCurrentLine(segments[0].id);
-    }
-  }, [segments]);
-
   // Translate modal state
   const [showTranslate, setShowTranslate] = useState(false);
-  const [translateText, setTranslateText] = useState<string>("");
-  const [sourceText, setSourceText] = useState<string>("");
+  const [translateSegment, setTranslateSegment] = useState<Segment | null>(
+    null
+  ); // Store the segment directly
 
   // Real duration/position from YoutubePlayer
   const [duration, setDuration] = useState<number>(0);
@@ -84,11 +78,17 @@ export default function VideoDetailScreen() {
     setShowDictionary(true);
   }
 
-  function handleTranslate(text: string) {
-    setSourceText(text);
-    setTranslateText("Đây là bản dịch tiếng Việt của câu này."); // mock
+  function handleTranslate(segment: Segment) {
+    setTranslateSegment(segment);
     setShowTranslate(true);
   }
+
+  // Set current line to first segment when segments load
+  useEffect(() => {
+    if (segments.length > 0 && !currentLine) {
+      setCurrentLine(segments[0].id);
+    }
+  }, [segments]);
 
   // Handle seeking to a specific time in the video
   function handleSeek(time: number) {
@@ -405,10 +405,11 @@ export default function VideoDetailScreen() {
       )}
 
       {/* Translate Modal */}
-      {showTranslate && (
+      {showTranslate && translateSegment && (
         <TranslateModal
-          source={sourceText}
-          videoId={video?.id || ""}
+          source={translateSegment.content}
+          video={video}
+          segment={translateSegment} // Pass the segment directly
           onClose={() => setShowTranslate(false)}
         />
       )}

@@ -12,7 +12,7 @@ type TranscriptLineProps = {
   isActive?: boolean;
   onPressLine?: () => void;
   onWordPress?: (word: string) => void;
-  onTranslate?: (text: string) => void;
+  onTranslate?: (segment: Segment) => void; // Update type to accept Segment
   segment?: Segment;
   onMicPress?: (segment: Segment) => void;
 };
@@ -75,7 +75,7 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
         <View style={styles.translateBox}>
           <TouchableOpacity
             style={styles.translateIcon}
-            onPress={() => onTranslate?.(text)}
+            onPress={() => onTranslate?.(segment!)} // Pass the segment directly
           >
             <Ionicons name="language-outline" size={18} color={Colors.tint} />
           </TouchableOpacity>

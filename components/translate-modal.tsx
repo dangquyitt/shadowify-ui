@@ -1,4 +1,6 @@
 import { Colors } from "@/constants/Colors";
+import { Segment } from "@/types/segment";
+import { Video } from "@/types/video";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -6,11 +8,13 @@ import { MockTranslateAPI } from "./mock-translate-api";
 
 export default function TranslateModal({
   source,
-  videoId,
+  video,
+  segment,
   onClose,
 }: {
   source: string;
-  videoId: string;
+  segment: Segment;
+  video: Video;
   onClose: () => void;
 }) {
   const { router } = require("expo-router");
@@ -43,15 +47,15 @@ export default function TranslateModal({
               <TouchableOpacity
                 onPress={() => {
                   onClose();
-                  // Navigate to the appropriate screen
-                  if (videoId) {
+                  // Navigate to the shadowing-practice screen
+                  if (segment) {
                     router.push({
-                      pathname: "/(screens)/video-detail", // Update with correct path when shadowing-practice is implemented
+                      pathname: "/(screens)/shadowing-practice",
                       params: {
-                        videoId: videoId,
+                        youtubeId: video.youtube_id,
                         transcript: source,
-                        start: 2,
-                        end: 4,
+                        startSec: segment.start_sec,
+                        endSec: segment.end_sec,
                       },
                     });
                   }
