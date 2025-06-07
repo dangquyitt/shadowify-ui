@@ -1,3 +1,6 @@
+import { MarkedText } from "@/components/marked-text";
+import { ShadowingRecorder } from "@/components/shadowing-recorder";
+import { compareTexts, TextComparisonResult } from "@/utils/textComparison";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -11,7 +14,6 @@ import {
   View,
 } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
-import { ShadowingRecorder } from "../../components/ShadowingRecorder";
 import { Colors } from "../../constants/Colors";
 
 const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
@@ -31,6 +33,8 @@ export default function ShadowingPracticeScreen() {
   const [accuracy, setAccuracy] = useState(0);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [textComparison, setTextComparison] =
+    useState<TextComparisonResult | null>(null);
 
   const playerRef = useRef(null);
 
@@ -49,7 +53,11 @@ export default function ShadowingPracticeScreen() {
     setIsRecording(false);
     setHasRecorded(true);
     setSpokenText(text);
-    setAccuracy(accuracyScore);
+
+    // Compare the spoken text with the original transcript
+    const comparison = compareTexts(transcript || "", text);
+    setTextComparison(comparison);
+    setAccuracy(comparison.accuracy);
   };
 
   const handlePlayRecording = () => {
@@ -61,6 +69,7 @@ export default function ShadowingPracticeScreen() {
     setHasRecorded(false);
     setSpokenText("");
     setAccuracy(0);
+    setTextComparison(null);
   };
 
   return (
@@ -111,18 +120,22 @@ export default function ShadowingPracticeScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.transcriptBox}>
-            <Text style={styles.transcriptText}>{transcript}</Text>
+            {hasRecorded && textComparison ? (
+              <MarkedText markedWords={textComparison.markedOriginalWords} />
+            ) : (
+              <Text style={styles.transcriptText}>{transcript}</Text>
+            )}
           </View>
         </View>
 
         {/* Spoken text result (only shown if has recorded) */}
-        {hasRecorded && (
+        {hasRecorded && textComparison && (
           <View style={styles.speechResultContainer}>
             <View style={styles.speechResultHeader}>
               <Text style={styles.speechResultTitle}>Your Speech</Text>
             </View>
             <View style={styles.speechResultBox}>
-              <Text style={styles.speechResultText}>{spokenText}</Text>
+              <MarkedText markedWords={textComparison.markedSpokenWords} />
             </View>
           </View>
         )}

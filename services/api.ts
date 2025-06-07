@@ -55,4 +55,28 @@ export const videoApi = {
   },
 };
 
+export const speechApi = {
+  /**
+   * Transcribes audio and returns the text
+   * @param audioBase64 - Base64 encoded audio data
+   * @returns Promise with the transcribed text
+   */
+  transcribe: async (audioBase64: string): Promise<string> => {
+    try {
+      const response = await api.post<{ code: string; data: { text: string } }>('/stt/transcribe', {
+        audio_base64: audioBase64,
+      });
+
+      if (response.data.code === 'success') {
+        return response.data.data.text;
+      } else {
+        throw new Error('Transcription failed');
+      }
+    } catch (error) {
+      console.error('Speech transcription error:', error);
+      throw error;
+    }
+  },
+};
+
 export default api;
