@@ -37,6 +37,8 @@ export default function ShadowingPracticeScreen() {
     useState<TextComparisonResult | null>(null);
 
   const playerRef = useRef(null);
+  const startTime = parseInt(start, 10) || 0;
+  const endTime = parseInt(end, 10) || undefined;
 
   // Auto-pause video when recording
   useEffect(() => {
@@ -44,6 +46,39 @@ export default function ShadowingPracticeScreen() {
       setIsPaused(true);
     }
   }, [isRecording, isPlayerReady]);
+
+  // Handle video state changes to ensure proper looping from start point
+  const handleStateChange = (state: string) => {
+    if (state === "ended" && playerRef.current) {
+      // Khi video kết thúc, quay lại điểm bắt đầu và tự động phát lại
+      playerRef.current.seekTo(startTime, true);
+      setIsPaused(false);
+    }
+  };
+
+  // Sử dụng useEffect để theo dõi vị trí video và loop lại khi cần thiết
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval>;
+
+    if (!isPaused && playerRef.current && endTime) {
+      intervalId = setInterval(async () => {
+        try {
+          const currentTime = await playerRef.current.getCurrentTime();
+          if (currentTime >= endTime) {
+            playerRef.current.seekTo(startTime, true);
+          }
+        } catch (err) {
+          console.error("Error checking video position:", err);
+        }
+      }, 500);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isPaused, endTime, startTime]);
 
   const toggleRecording = () => {
     setIsRecording((prev) => !prev);
@@ -94,14 +129,30 @@ export default function ShadowingPracticeScreen() {
       {/* Video Player */}
       <View style={styles.videoContainer}>
         <YoutubePlayer
+          ref={playerRef}
           height={VIDEO_HEIGHT}
           play={!isPaused}
           videoId={youtubeId}
-          onReady={() => setIsPlayerReady(true)}
+          onReady={() => {
+            setIsPlayerReady(true);
+            // Make sure it starts at the correct position when first loaded
+            if (playerRef.current) {
+              playerRef.current.seekTo(startTime, true);
+            }
+          }}
+          onChangeState={handleStateChange}
           initialPlayerParams={{
-            loop: true,
-            start: parseInt(start, 10) || 0,
-            end: parseInt(end, 10) || undefined,
+            loop: false, // We'll handle looping manually for more control
+            start: startTime,
+            end: endTime,
+            controls: true, // Sử dụng controls của YouTube
+            modestbranding: true,
+            showinfo: false,
+            rel: false,
+            fs: false,
+            iv_load_policy: 3,
+            cc_load_policy: 0,
+            disablekb: true,
           }}
         />
       </View>
