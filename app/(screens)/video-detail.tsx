@@ -13,7 +13,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  findNodeHandle,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -60,6 +59,7 @@ export default function VideoDetailScreen() {
   const [dictionaryWord, setDictionaryWord] = useState<string | null>(null);
   const [liveSubActive, setLiveSubActive] = useState(false);
   const [repeatActive, setRepeatActive] = useState(false);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
 
   // Translate modal state
   const [showTranslate, setShowTranslate] = useState(false);
@@ -73,6 +73,8 @@ export default function VideoDetailScreen() {
   const position = currentTime;
   const percent = duration > 0 ? (position / duration) * 100 : 0;
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
   function handleWordPress(word: string) {
     setDictionaryWord(word);
     setShowDictionary(true);
@@ -83,12 +85,51 @@ export default function VideoDetailScreen() {
     setShowTranslate(true);
   }
 
+  // Function to scroll to a specific segment
+  const scrollToSegment = (segmentId: string) => {
+    const segmentRef = lineRefs.current[segmentId];
+    if (segmentRef && scrollViewRef.current) {
+      segmentRef.measureLayout(
+        scrollViewRef.current as any,
+        (x, y, width, height) => {
+          // Calculate scroll position to center the segment
+          const scrollY = Math.max(0, y - scrollViewHeight / 2 + height / 2);
+          scrollViewRef.current?.scrollTo({
+            y: scrollY,
+            animated: true,
+          });
+        },
+        () => {
+          // Fallback if measureLayout fails
+        }
+      );
+    }
+  };
+
   // Set current line to first segment when segments load
   useEffect(() => {
     if (segments.length > 0 && !currentLine) {
       setCurrentLine(segments[0].id);
     }
   }, [segments]);
+
+  // Handle live sub activation - scroll to current segment immediately
+  useEffect(() => {
+    if (liveSubActive && segments.length > 0 && currentTime > 0) {
+      const foundSegment = segments.find(
+        (seg) =>
+          typeof seg.start_sec === "number" &&
+          typeof seg.end_sec === "number" &&
+          currentTime >= seg.start_sec &&
+          currentTime < seg.end_sec
+      );
+
+      if (foundSegment) {
+        setCurrentLine(foundSegment.id);
+        scrollToSegment(foundSegment.id);
+      }
+    }
+  }, [liveSubActive]);
 
   // Handle seeking to a specific time in the video
   function handleSeek(time: number) {
@@ -136,37 +177,35 @@ export default function VideoDetailScreen() {
         setCurrentTime(elapsed_sec);
         const calculatedPercent =
           duration > 0 ? (elapsed_sec / duration) * 100 : 0;
+
+        // Auto-update current segment when live sub is active
+        if (liveSubActive && segments.length > 0) {
+          const foundSegment = segments.find(
+            (seg) =>
+              typeof seg.start_sec === "number" &&
+              typeof seg.end_sec === "number" &&
+              elapsed_sec >= seg.start_sec &&
+              elapsed_sec < seg.end_sec
+          );
+
+          if (foundSegment && foundSegment.id !== currentLine) {
+            setCurrentLine(foundSegment.id);
+            // Auto-scroll to the current segment
+            scrollToSegment(foundSegment.id);
+          }
+        }
       }
     }, 100); // Refresh every 100ms
 
     return () => {
       clearInterval(interval);
     };
-  }, [duration]);
-
-  const scrollViewRef = useRef<ScrollView>(null);
-  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+  }, [duration, liveSubActive, segments, currentLine, scrollViewHeight]);
 
   const handleScrollViewLayout = (event: any) => {
     const { height } = event.nativeEvent.layout;
     setScrollViewHeight(height);
   };
-
-  // Scroll to the highlighted transcript line when liveSubActive is enabled
-  useEffect(() => {
-    if (liveSubActive && currentLine) {
-      const index = segments.findIndex((seg) => seg.id === currentLine);
-      if (index !== -1 && scrollViewRef.current) {
-        const lineHeight = 50; // Assuming each transcript line has a height of 50
-        const scrollToY =
-          index * lineHeight - scrollViewHeight / 2 + lineHeight / 2;
-        scrollViewRef.current.scrollTo({
-          y: Math.max(scrollToY, 0), // Ensure it doesn't scroll to a negative position
-          animated: true,
-        });
-      }
-    }
-  }, [liveSubActive, currentLine, segments, scrollViewHeight]);
 
   const handleMicPress = (segment: Segment) => {
     if (segment) {
@@ -181,26 +220,6 @@ export default function VideoDetailScreen() {
       });
     }
   };
-  useEffect(() => {
-    if (liveSubActive && currentLine && scrollViewRef.current) {
-      const targetRef = lineRefs.current[currentLine];
-      const scrollViewHandle = findNodeHandle(scrollViewRef.current);
-
-      if (
-        targetRef &&
-        typeof targetRef.measureLayout === "function" &&
-        scrollViewHandle
-      ) {
-        targetRef.measureLayout(scrollViewHandle, (x, y, width, height) => {
-          const scrollToY = y - scrollViewHeight / 2 + height / 2;
-          scrollViewRef.current?.scrollTo({
-            y: Math.max(scrollToY, 0),
-            animated: true,
-          });
-        });
-      }
-    }
-  }, [liveSubActive, currentLine, scrollViewHeight]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
