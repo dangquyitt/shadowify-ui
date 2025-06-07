@@ -37,7 +37,7 @@ export const ShadowingRecorder = ({
     (async () => {
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (!status.granted) {
-        Alert.alert("Microphone permission denied");
+        Alert.alert("Permission to access microphone was denied");
       }
     })();
   }, []);

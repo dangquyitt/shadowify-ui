@@ -41,6 +41,7 @@ export default function ShadowingPracticeScreen() {
 
   const playerRef = useRef(null);
   const audioPlayer = useAudioPlayer();
+  const audioSubscriptionRef = useRef(null);
 
   // Auto-pause video when recording
   useEffect(() => {
@@ -117,20 +118,38 @@ export default function ShadowingPracticeScreen() {
     try {
       if (isPlayingAudio) {
         // If already playing, stop it
-        audioPlayer.pause();
+        try {
+          audioPlayer.pause();
+        } catch (pauseError) {
+          console.warn("Error pausing audio:", pauseError);
+        }
         setIsPlayingAudio(false);
       } else {
+        // Remove previous listener if exists
+        if (audioSubscriptionRef.current) {
+          audioSubscriptionRef.current.remove();
+          audioSubscriptionRef.current = null;
+        }
+
         // Load and play the audio
         setIsPlayingAudio(true);
+
         await audioPlayer.replace({ uri: audioUri });
         await audioPlayer.play();
 
-        // When playback finishes
-        audioPlayer.addListener("playbackStatusUpdate", (status) => {
-          if (status.didJustFinish) {
-            setIsPlayingAudio(false);
+        // Add listener for playback completion
+        audioSubscriptionRef.current = audioPlayer.addListener(
+          "playbackStatusUpdate",
+          (status) => {
+            if (status.didJustFinish) {
+              setIsPlayingAudio(false);
+              if (audioSubscriptionRef.current) {
+                audioSubscriptionRef.current.remove();
+                audioSubscriptionRef.current = null;
+              }
+            }
           }
-        });
+        );
       }
     } catch (error) {
       console.error("Error playing audio:", error);
@@ -142,20 +161,37 @@ export default function ShadowingPracticeScreen() {
   // Cleanup audio resources when recording again or leaving the screen
   useEffect(() => {
     return () => {
+      // Clean up listener
+      if (audioSubscriptionRef.current) {
+        audioSubscriptionRef.current.remove();
+        audioSubscriptionRef.current = null;
+      }
+      // Release audio player
       if (audioPlayer) {
-        audioPlayer.release();
+        try {
+          audioPlayer.release();
+        } catch (error) {
+          console.warn("Error releasing audio player:", error);
+        }
       }
     };
   }, []);
 
   const handleRecordAgain = async () => {
-    // Cleanup audio resources before resetting
-    if (audioPlayer) {
+    // Stop current audio playback if playing
+    if (isPlayingAudio) {
       try {
-        audioPlayer.release();
+        audioPlayer.pause();
       } catch (error) {
-        console.error("Error releasing audio player:", error);
+        console.warn("Error pausing audio:", error);
       }
+      setIsPlayingAudio(false);
+    }
+
+    // Clean up audio listener
+    if (audioSubscriptionRef.current) {
+      audioSubscriptionRef.current.remove();
+      audioSubscriptionRef.current = null;
     }
 
     // Reset states
