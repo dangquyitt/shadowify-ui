@@ -2,7 +2,7 @@ import { MarkedText } from "@/components/marked-text";
 import { ShadowingRecorder } from "@/components/shadowing-recorder";
 import { compareTexts, TextComparisonResult } from "@/utils/textComparison";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { Audio } from "expo-av";
+import { useAudioPlayer } from "expo-audio";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -37,10 +37,10 @@ export default function ShadowingPracticeScreen() {
   const [textComparison, setTextComparison] =
     useState<TextComparisonResult | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
-  const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   const playerRef = useRef(null);
+  const audioPlayer = useAudioPlayer();
 
   // Auto-pause video when recording
   useEffect(() => {
@@ -82,15 +82,6 @@ export default function ShadowingPracticeScreen() {
     };
   }, [isPaused, endSec, startSec]);
 
-  // Cleanup audio resources when component unmounts
-  useEffect(() => {
-    return () => {
-      if (audioSound) {
-        audioSound.unloadAsync();
-      }
-    };
-  }, [audioSound]);
-
   const toggleRecording = () => {
     setIsRecording((prev) => !prev);
   };
@@ -116,6 +107,7 @@ export default function ShadowingPracticeScreen() {
     setAccuracy(comparison.accuracy);
   };
 
+  // Ensure audioPlayer is properly initialized and handle playback correctly
   const handlePlayRecording = async () => {
     if (!audioUri) {
       Alert.alert("Error", "No recording found to play");
@@ -123,26 +115,19 @@ export default function ShadowingPracticeScreen() {
     }
 
     try {
-      if (isPlayingAudio && audioSound) {
+      if (isPlayingAudio) {
         // If already playing, stop it
-        await audioSound.stopAsync();
-        await audioSound.unloadAsync();
-        setAudioSound(null);
+        audioPlayer.pause();
         setIsPlayingAudio(false);
       } else {
         // Load and play the audio
         setIsPlayingAudio(true);
-
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: audioUri },
-          { shouldPlay: true }
-        );
-
-        setAudioSound(sound);
+        await audioPlayer.replace({ uri: audioUri });
+        await audioPlayer.play();
 
         // When playback finishes
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) {
+        audioPlayer.addListener("playbackStatusUpdate", (status) => {
+          if (status.didJustFinish) {
             setIsPlayingAudio(false);
           }
         });
@@ -154,24 +139,31 @@ export default function ShadowingPracticeScreen() {
     }
   };
 
+  // Cleanup audio resources when recording again or leaving the screen
+  useEffect(() => {
+    return () => {
+      if (audioPlayer) {
+        audioPlayer.release();
+      }
+    };
+  }, []);
+
   const handleRecordAgain = async () => {
     // Cleanup audio resources before resetting
-    if (audioSound) {
+    if (audioPlayer) {
       try {
-        await audioSound.stopAsync();
-        await audioSound.unloadAsync();
-        setAudioSound(null);
-        setIsPlayingAudio(false);
+        audioPlayer.release();
       } catch (error) {
-        console.error("Error cleaning up audio:", error);
+        console.error("Error releasing audio player:", error);
       }
     }
 
+    // Reset states
+    setAudioUri(null);
     setHasRecorded(false);
     setSpokenText("");
     setAccuracy(0);
     setTextComparison(null);
-    setAudioUri(null);
   };
 
   return (

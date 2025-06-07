@@ -108,6 +108,7 @@ export const ShadowingRecorder = ({
     handleRecording();
   }, [isRecording, hasStartedRecording]);
 
+  // Remove redundant saving of audio file to the cache directory
   const uploadRecording = async (uri: string) => {
     try {
       setIsUploading(true);
@@ -121,8 +122,6 @@ export const ShadowingRecorder = ({
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         console.warn("Audio file not found:", uri);
-        // Don't show alert to user on first mount - this would be confusing
-        // Only show if we know we've actually recorded something
         if (hasStartedRecording) {
           Alert.alert(
             "Recording file missing",
@@ -130,29 +129,6 @@ export const ShadowingRecorder = ({
           );
         }
         return;
-      }
-
-      // Save a copy of the audio file for playback
-      let audioFileUri = "";
-      try {
-        const audioDirectory = FileSystem.cacheDirectory + "audio/";
-
-        // Create directory if it doesn't exist
-        await FileSystem.makeDirectoryAsync(audioDirectory, {
-          intermediates: true,
-        }).catch((err) => console.log("Directory may already exist"));
-
-        // Save the audio file to the cache directory
-        const fileName = "recording-" + new Date().getTime() + ".m4a";
-        audioFileUri = audioDirectory + fileName;
-        await FileSystem.copyAsync({
-          from: uri,
-          to: audioFileUri,
-        });
-
-        console.log("Audio saved to", audioFileUri);
-      } catch (err) {
-        console.error("Failed to save audio file", err);
       }
 
       // Read the original file as base64 for API
@@ -164,13 +140,12 @@ export const ShadowingRecorder = ({
         // Send to backend API using the speechApi service
         const transcribedText = await speechApi.transcribe(base64);
 
-        // Call the callback with the transcribed text, accuracy, and the audio file URI
-        onRecordingComplete(transcribedText, 0, audioFileUri); // Accuracy will be calculated by parent
+        // Call the callback with the transcribed text and the original URI
+        onRecordingComplete(transcribedText, 0, uri); // Accuracy will be calculated by parent
       } catch (apiErr) {
         console.error("Speech API call failed:", apiErr);
         Alert.alert("Error", "Failed to process audio. Server error.");
-        // Fallback to a mock result if API fails
-        onRecordingComplete("Failed to transcribe audio", 0, audioFileUri);
+        onRecordingComplete("Failed to transcribe audio", 0, uri);
       }
     } catch (err) {
       console.error("Upload failed", err);
