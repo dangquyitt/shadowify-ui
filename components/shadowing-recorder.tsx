@@ -12,11 +12,16 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../constants/Colors";
+import { speechApi } from "../services/api";
 
 type Props = {
   isRecording: boolean;
   toggleRecording: () => void;
-  onRecordingComplete: (text: string, accuracy: number) => void;
+  onRecordingComplete: (
+    text: string,
+    accuracy: number,
+    audioUri?: string
+  ) => void;
 };
 
 export const ShadowingRecorder = ({
@@ -62,6 +67,9 @@ export const ShadowingRecorder = ({
     return () => anim && anim.stop();
   }, [isRecording]);
 
+  // Track whether we have actually started recording
+  const [hasStartedRecording, setHasStartedRecording] = useState(false);
+
   useEffect(() => {
     const handleRecording = async () => {
       try {
@@ -82,11 +90,13 @@ export const ShadowingRecorder = ({
             }
           }
           recorder.record();
+          setHasStartedRecording(true);
         } else {
           await recorder.stop();
           // stop animation reset
           pulseAnim.setValue(1);
-          if (recorder.uri) {
+          // Only try to upload if we've actually recorded something
+          if (recorder.uri && hasStartedRecording) {
             await uploadRecording(recorder.uri);
           }
         }
@@ -96,53 +106,71 @@ export const ShadowingRecorder = ({
     };
 
     handleRecording();
-  }, [isRecording]);
+  }, [isRecording, hasStartedRecording]);
 
   const uploadRecording = async (uri: string) => {
     try {
       setIsUploading(true);
 
-      const fileInfo = await FileSystem.getInfoAsync(uri);
-      if (!fileInfo.exists) {
-        console.warn("Audio file not found:", uri);
-        Alert.alert(
-          "Recording file missing",
-          "Audio file was not found. Maybe the app reloaded?"
-        );
+      // Make sure the uri isn't empty
+      if (!uri) {
+        console.warn("No URI provided for recording");
         return;
       }
 
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) {
+        console.warn("Audio file not found:", uri);
+        // Don't show alert to user on first mount - this would be confusing
+        // Only show if we know we've actually recorded something
+        if (hasStartedRecording) {
+          Alert.alert(
+            "Recording file missing",
+            "Audio file was not found. Maybe the app reloaded?"
+          );
+        }
+        return;
+      }
+
+      // Save a copy of the audio file for playback
+      let audioFileUri = "";
+      try {
+        const audioDirectory = FileSystem.cacheDirectory + "audio/";
+
+        // Create directory if it doesn't exist
+        await FileSystem.makeDirectoryAsync(audioDirectory, {
+          intermediates: true,
+        }).catch((err) => console.log("Directory may already exist"));
+
+        // Save the audio file to the cache directory
+        const fileName = "recording-" + new Date().getTime() + ".m4a";
+        audioFileUri = audioDirectory + fileName;
+        await FileSystem.copyAsync({
+          from: uri,
+          to: audioFileUri,
+        });
+
+        console.log("Audio saved to", audioFileUri);
+      } catch (err) {
+        console.error("Failed to save audio file", err);
+      }
+
+      // Read the original file as base64 for API
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Delete file after using it, don't keep it in cache
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-
       try {
-        // Send to backend API
-        const response = await fetch("http://localhost:8080/stt/transcribe", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            audio_base64: base64,
-          }),
-        });
+        // Send to backend API using the speechApi service
+        const transcribedText = await speechApi.transcribe(base64);
 
-        const result = await response.json();
-        if (result.code === "success" && result.data?.text) {
-          // Call the callback with the transcribed text and a calculated accuracy (handled by parent)
-          onRecordingComplete(result.data.text, 0); // Accuracy will be calculated by parent
-        } else {
-          throw new Error("Invalid response format");
-        }
+        // Call the callback with the transcribed text, accuracy, and the audio file URI
+        onRecordingComplete(transcribedText, 0, audioFileUri); // Accuracy will be calculated by parent
       } catch (apiErr) {
-        console.error("API call failed:", apiErr);
+        console.error("Speech API call failed:", apiErr);
         Alert.alert("Error", "Failed to process audio. Server error.");
         // Fallback to a mock result if API fails
-        onRecordingComplete("Failed to transcribe audio", 0);
+        onRecordingComplete("Failed to transcribe audio", 0, audioFileUri);
       }
     } catch (err) {
       console.error("Upload failed", err);
@@ -153,13 +181,19 @@ export const ShadowingRecorder = ({
   };
 
   const handlePress = async () => {
-    // preview base64 on manual start
-    if (!isRecording && recorder.uri) {
+    // Only try to preview base64 if we've actually recorded something before
+    if (!isRecording && hasStartedRecording && recorder.uri) {
       try {
-        const b64 = await FileSystem.readAsStringAsync(recorder.uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        console.log("📀 Base64 on start press:", b64.substring(0, 100) + "...");
+        const fileInfo = await FileSystem.getInfoAsync(recorder.uri);
+        if (fileInfo.exists) {
+          const b64 = await FileSystem.readAsStringAsync(recorder.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          console.log(
+            "📀 Base64 on start press:",
+            b64.substring(0, 100) + "..."
+          );
+        }
       } catch (e) {
         console.warn("Preview error", e);
       }

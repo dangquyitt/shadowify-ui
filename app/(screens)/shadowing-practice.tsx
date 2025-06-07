@@ -2,9 +2,11 @@ import { MarkedText } from "@/components/marked-text";
 import { ShadowingRecorder } from "@/components/shadowing-recorder";
 import { compareTexts, TextComparisonResult } from "@/utils/textComparison";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Dimensions,
   SafeAreaView,
   ScrollView,
@@ -20,15 +22,11 @@ const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 
 export default function ShadowingPracticeScreen() {
   const router = useRouter();
-  const { youtubeId, transcript, startSec, endSec } = useLocalSearchParams<{
-    youtubeId: string;
-    transcript: string;
-    startSec: number;
-    endSec: number;
-  }>();
-
-  console.log("startSec:", startSec);
-  console.log("endSec:", endSec);
+  const params = useLocalSearchParams();
+  const youtubeId = params.youtubeId as string;
+  const transcript = params.transcript as string;
+  const startSec = Number(params.startSec) || 0;
+  const endSec = Number(params.endSec) || 0;
 
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
@@ -38,6 +36,9 @@ export default function ShadowingPracticeScreen() {
   const [isPaused, setIsPaused] = useState(false);
   const [textComparison, setTextComparison] =
     useState<TextComparisonResult | null>(null);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [audioSound, setAudioSound] = useState<Audio.Sound | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   const playerRef = useRef(null);
 
@@ -81,14 +82,33 @@ export default function ShadowingPracticeScreen() {
     };
   }, [isPaused, endSec, startSec]);
 
+  // Cleanup audio resources when component unmounts
+  useEffect(() => {
+    return () => {
+      if (audioSound) {
+        audioSound.unloadAsync();
+      }
+    };
+  }, [audioSound]);
+
   const toggleRecording = () => {
     setIsRecording((prev) => !prev);
   };
 
-  const handleRecordingComplete = (text: string, accuracyScore: number) => {
+  const handleRecordingComplete = (
+    text: string,
+    accuracyScore: number,
+    recordingUri?: string
+  ) => {
     setIsRecording(false);
     setHasRecorded(true);
     setSpokenText(text);
+
+    // Save the audio URI if available
+    if (recordingUri) {
+      setAudioUri(recordingUri);
+      console.log("Audio saved at:", recordingUri);
+    }
 
     // Compare the spoken text with the original transcript
     const comparison = compareTexts(transcript || "", text);
@@ -96,16 +116,62 @@ export default function ShadowingPracticeScreen() {
     setAccuracy(comparison.accuracy);
   };
 
-  const handlePlayRecording = () => {
-    // Mock playing the recording - in real app would play audio file
-    alert("Playing your recording...");
+  const handlePlayRecording = async () => {
+    if (!audioUri) {
+      Alert.alert("Error", "No recording found to play");
+      return;
+    }
+
+    try {
+      if (isPlayingAudio && audioSound) {
+        // If already playing, stop it
+        await audioSound.stopAsync();
+        await audioSound.unloadAsync();
+        setAudioSound(null);
+        setIsPlayingAudio(false);
+      } else {
+        // Load and play the audio
+        setIsPlayingAudio(true);
+
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: audioUri },
+          { shouldPlay: true }
+        );
+
+        setAudioSound(sound);
+
+        // When playback finishes
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            setIsPlayingAudio(false);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error playing audio:", error);
+      Alert.alert("Playback Error", "Failed to play recording");
+      setIsPlayingAudio(false);
+    }
   };
 
-  const handleRecordAgain = () => {
+  const handleRecordAgain = async () => {
+    // Cleanup audio resources before resetting
+    if (audioSound) {
+      try {
+        await audioSound.stopAsync();
+        await audioSound.unloadAsync();
+        setAudioSound(null);
+        setIsPlayingAudio(false);
+      } catch (error) {
+        console.error("Error cleaning up audio:", error);
+      }
+    }
+
     setHasRecorded(false);
     setSpokenText("");
     setAccuracy(0);
     setTextComparison(null);
+    setAudioUri(null);
   };
 
   return (
@@ -234,14 +300,18 @@ export default function ShadowingPracticeScreen() {
             <TouchableOpacity
               style={styles.resultButton}
               onPress={handlePlayRecording}
-              accessibilityLabel="Play my recording"
+              accessibilityLabel={
+                isPlayingAudio ? "Stop playing" : "Play my recording"
+              }
             >
               <MaterialIcons
-                name="play-circle-filled"
+                name={isPlayingAudio ? "stop-circle" : "play-circle-filled"}
                 size={24}
                 color={Colors.tint}
               />
-              <Text style={styles.resultButtonText}>My Record</Text>
+              <Text style={styles.resultButtonText}>
+                {isPlayingAudio ? "Stop" : "My Record"}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
