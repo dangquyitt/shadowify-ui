@@ -29,14 +29,14 @@ const VideoItem = ({
   onPress: () => void;
 }) => {
   const { width } = useWindowDimensions();
-  const containerPadding = 20;
-  const thumbWidth = Math.round((width - containerPadding * 2) * 0.4);
+  const containerPadding = 32;
+  const thumbWidth = Math.round((width - containerPadding * 2) * 0.35);
   const thumbHeight = Math.round((thumbWidth * 9) / 16);
 
   return (
     <TouchableOpacity
       style={styles.itemContainer}
-      activeOpacity={0.85}
+      activeOpacity={0.7}
       onPress={onPress}
     >
       <View
@@ -52,11 +52,15 @@ const VideoItem = ({
         </View>
       </View>
       <View style={styles.itemInfo}>
-        <Text style={styles.itemTitle} numberOfLines={2}>
+        <Text style={styles.itemTitle} numberOfLines={3}>
           {video.title}
         </Text>
-        <Text style={styles.channelName}>{video.title}</Text>
-        <Text style={styles.metaInfo}>{video.title}</Text>
+        <Text style={styles.channelName} numberOfLines={1}>
+          Channel Name
+        </Text>
+        <Text style={styles.metaInfo} numberOfLines={1}>
+          {video.views || "1.2K"} views • {video.published || "2 days ago"}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -81,13 +85,15 @@ const Page = (props: Props) => {
   };
 
   const renderHeader = () => (
-    <>
+    <View style={styles.headerSection}>
       <Header />
       <SearchBar />
-      <RecommendedChannels />
-      <PopularVideos />
-      <Categories onCategoryChanged={onCatChanged} />
-    </>
+      <View style={styles.contentSections}>
+        <RecommendedChannels />
+        <PopularVideos />
+        <Categories onCategoryChanged={onCatChanged} />
+      </View>
+    </View>
   );
 
   const renderFooter = () =>
@@ -135,6 +141,13 @@ export default Page;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.white,
+  },
+  headerSection: {
+    backgroundColor: Colors.white,
+  },
+  contentSections: {
+    gap: 4,
   },
   loaderContainer: {
     paddingVertical: 20,
@@ -147,65 +160,81 @@ const styles = StyleSheet.create({
   errorText: {
     textAlign: "center",
     padding: 20,
+    color: Colors.darkGrey,
   },
   // Video item styles
   itemContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 20,
-    marginBottom: 20,
-    flex: 1,
-    gap: 10,
+    alignItems: "flex-start",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: Colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   thumbBox: {
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: "hidden",
     backgroundColor: Colors.background,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: Colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
   itemImg: {
-    borderRadius: 12,
+    borderRadius: 8,
     backgroundColor: Colors.background,
     width: "100%",
     height: "100%",
   },
   durationOverlay: {
     position: "absolute",
-    right: 6,
-    bottom: 6,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    right: 4,
+    bottom: 4,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    borderRadius: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
   durationText: {
-    color: "#fff",
-    fontSize: 11,
+    color: Colors.white,
+    fontSize: 10,
     fontWeight: "600",
   },
   itemInfo: {
     flex: 1,
     marginLeft: 12,
-    gap: 4,
-    justifyContent: "center",
-    alignItems: "flex-start",
+    gap: 3,
+    justifyContent: "flex-start",
   },
   itemTitle: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
     color: Colors.black,
-    marginBottom: 2,
+    lineHeight: 18,
   },
   channelName: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.softText,
     fontWeight: "500",
-    marginBottom: 2,
   },
   metaInfo: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.darkGrey,
   },
 });

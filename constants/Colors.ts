@@ -8,5 +8,18 @@ export const Colors = {
     darkGrey: '#666',
     lightGrey: '#999',
     softText: '#555',
+    // Additional grey colors
+    searchBackground: '#E4E4E4',
+    shadowColor: '#000',
+    borderGrey: '#ddd',
+    placeholderGrey: '#888',
+    // Synonym colors
+    synonymBackground: '#E8F5E8',
+    synonymBorder: '#4CAF50',
+    synonymText: '#2E7D32',
+    // Antonym colors
+    antonymBackground: '#FFE8E8',
+    antonymBorder: '#F44336',
+    antonymText: '#C62828',
   };
   

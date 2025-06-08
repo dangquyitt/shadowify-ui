@@ -1,3 +1,4 @@
+import { DictionaryResponse } from '@/types/dictionary';
 import { Segment } from '@/types/segment';
 import { Video } from '@/types/video';
 import axios from 'axios';
@@ -92,6 +93,28 @@ export const speechApi = {
     } catch (error) {
       console.error('Speech transcription error:', error);
       throw error;
+    }
+  },
+};
+
+export const dictionaryApi = {
+  /**
+   * Fetches word definition from Dictionary API
+   * @param word - The word to look up
+   * @param language - Language code (default: 'en' for English)
+   * @returns Promise with dictionary data
+   */
+  getWordDefinition: async (word: string, language: string = 'en'): Promise<DictionaryResponse> => {
+    try {
+      const response = await axios.get<DictionaryResponse>(
+        `https://api.dictionaryapi.dev/api/v2/entries/${language}/${encodeURIComponent(word.toLowerCase())}`
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new Error(`No definition found for "${word}"`);
+      }
+      throw new Error('Failed to fetch word definition');
     }
   },
 };
