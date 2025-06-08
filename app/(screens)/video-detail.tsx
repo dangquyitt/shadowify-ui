@@ -78,6 +78,11 @@ export default function VideoDetailScreen() {
   function handleWordPress(word: string) {
     setDictionaryWord(word);
     setShowDictionary(true);
+    setPaused(true); // Pause the video when showing the dictionary modal
+  }
+
+  function handleDictionaryClose() {
+    setShowDictionary(false);
   }
 
   function handleTranslate(segment: Segment) {
@@ -419,7 +424,7 @@ export default function VideoDetailScreen() {
       {showDictionary && dictionaryWord && (
         <DictionaryModal
           word={dictionaryWord}
-          onClose={() => setShowDictionary(false)}
+          onClose={handleDictionaryClose} // Use the new close handler
         />
       )}
 

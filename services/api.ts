@@ -119,4 +119,29 @@ export const dictionaryApi = {
   },
 };
 
+export const translateApi = {
+  /**
+   * Translates text using the API
+   * @param text - The text to translate
+   * @returns Promise with the translated text
+   */
+  translateText: async (text: string): Promise<string> => {
+    try {
+      const response = await api.post<{ code: string; data: { text: string } }>(
+        "/translate",
+        { text }
+      );
+
+      if (response.data.code === "success") {
+        return response.data.data.text;
+      } else {
+        throw new Error("Translation failed");
+      }
+    } catch (error) {
+      console.error("Translation API error:", error);
+      throw error;
+    }
+  },
+};
+
 export default api;

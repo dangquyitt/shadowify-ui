@@ -1,10 +1,16 @@
 import { Colors } from "@/constants/Colors";
+import { translateApi } from "@/services/api"; // Use the translate API from api.ts
 import { Segment } from "@/types/segment";
 import { Video } from "@/types/video";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { MockTranslateAPI } from "./mock-translate-api";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function TranslateModal({
   source,
@@ -19,6 +25,20 @@ export default function TranslateModal({
 }) {
   const { router } = require("expo-router");
   const [result, setResult] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchTranslation = async () => {
+      try {
+        const translatedText = await translateApi.translateText(source);
+        setResult(translatedText);
+      } catch (error) {
+        console.error("Error fetching translation:", error);
+        setResult("Error fetching translation");
+      }
+    };
+
+    fetchTranslation();
+  }, [source]);
 
   return (
     <View style={styles.dictModalOverlay}>
@@ -73,7 +93,16 @@ export default function TranslateModal({
             </View>
           </>
         ) : (
-          <MockTranslateAPI text={source} onResult={setResult} />
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 60,
+            }}
+          >
+            <ActivityIndicator size="small" />
+            <Text style={{ color: "#888", marginTop: 8 }}>Đang dịch...</Text>
+          </View>
         )}
       </View>
     </View>
