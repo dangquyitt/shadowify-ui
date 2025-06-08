@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
 import { Colors } from "../../constants/Colors";
+import DictionaryModal from "@/components/dictionary-modal";
 
 const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 
@@ -38,6 +39,7 @@ export default function ShadowingPracticeScreen() {
     useState<TextComparisonResult | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
   const playerRef = useRef(null);
   const audioPlayer = useAudioPlayer();
@@ -202,6 +204,14 @@ export default function ShadowingPracticeScreen() {
     setTextComparison(null);
   };
 
+  const handleWordPress = (word: string) => {
+    setSelectedWord(word);
+  };
+
+  const handleDictionaryClose = () => {
+    setSelectedWord(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -267,7 +277,10 @@ export default function ShadowingPracticeScreen() {
           </View>
           <View style={styles.transcriptBox}>
             {hasRecorded && textComparison ? (
-              <MarkedText markedWords={textComparison.markedOriginalWords} />
+              <MarkedText
+                markedWords={textComparison.markedOriginalWords}
+                onWordPress={handleWordPress}
+              />
             ) : (
               <Text style={styles.transcriptText}>{transcript}</Text>
             )}
@@ -344,6 +357,11 @@ export default function ShadowingPracticeScreen() {
           </View>
         )}
       </View>
+
+      {/* Dictionary Modal */}
+      {selectedWord && (
+        <DictionaryModal word={selectedWord} onClose={handleDictionaryClose} />
+      )}
     </SafeAreaView>
   );
 }

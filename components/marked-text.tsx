@@ -4,12 +4,13 @@ import { StyleSheet, Text, View } from "react-native";
 
 interface MarkedTextProps {
   markedWords: Array<{ word: string; isCorrect: boolean }>;
+  onWordPress?: (word: string) => void;
 }
 
 /**
  * Component to display text with only incorrect words highlighted
  */
-export const MarkedText: React.FC<MarkedTextProps> = ({ markedWords }) => {
+export const MarkedText: React.FC<MarkedTextProps> = ({ markedWords, onWordPress }) => {
   return (
     <View style={styles.container}>
       <Text>
@@ -21,6 +22,7 @@ export const MarkedText: React.FC<MarkedTextProps> = ({ markedWords }) => {
               // Only apply highlighting styles to incorrect words
               !item.isCorrect ? styles.incorrectWord : styles.correctWord,
             ]}
+            onPress={() => onWordPress?.(item.word)}
           >
             {item.word}
             {index < markedWords.length - 1 ? " " : ""}
