@@ -1,3 +1,4 @@
+import DictionaryModal from "@/components/dictionary-modal";
 import { MarkedText } from "@/components/marked-text";
 import { ShadowingRecorder } from "@/components/shadowing-recorder";
 import { compareTexts, TextComparisonResult } from "@/utils/textComparison";
@@ -17,7 +18,6 @@ import {
 } from "react-native";
 import YoutubePlayer from "react-native-youtube-iframe";
 import { Colors } from "../../constants/Colors";
-import DictionaryModal from "@/components/dictionary-modal";
 
 const VIDEO_HEIGHT = (Dimensions.get("window").width * 9) / 16;
 

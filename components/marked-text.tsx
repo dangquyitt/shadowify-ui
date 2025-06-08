@@ -10,25 +10,30 @@ interface MarkedTextProps {
 /**
  * Component to display text with only incorrect words highlighted
  */
-export const MarkedText: React.FC<MarkedTextProps> = ({ markedWords, onWordPress }) => {
+export const MarkedText: React.FC<MarkedTextProps> = ({
+  markedWords,
+  onWordPress,
+}) => {
   return (
     <View style={styles.container}>
-      <Text>
-        {markedWords.map((item, index) => (
+      {markedWords.map((item, index) => (
+        <Text
+          key={`word-${index}`}
+          style={[
+            styles.word,
+            // Only apply highlighting styles to incorrect words
+            !item.isCorrect ? styles.incorrectWord : styles.correctWord,
+          ]}
+        >
           <Text
-            key={`word-${index}`}
-            style={[
-              styles.word,
-              // Only apply highlighting styles to incorrect words
-              !item.isCorrect ? styles.incorrectWord : styles.correctWord,
-            ]}
             onPress={() => onWordPress?.(item.word)}
+            style={!item.isCorrect ? styles.underline : undefined}
           >
             {item.word}
-            {index < markedWords.length - 1 ? " " : ""}
           </Text>
-        ))}
-      </Text>
+          {index < markedWords.length - 1 ? " " : ""}
+        </Text>
+      ))}
     </View>
   );
 };
@@ -48,6 +53,8 @@ const styles = StyleSheet.create({
   incorrectWord: {
     color: Colors.tint,
     fontWeight: "500",
+  },
+  underline: {
     textDecorationLine: "underline",
   },
 });
