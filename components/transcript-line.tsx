@@ -62,20 +62,23 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
           {words.map((word, idx) => (
             <Text
               key={idx}
-              style={isActive ? styles.underlineWord : undefined}
+              style={styles.wordText}
               onPress={() =>
                 onWordPress && onWordPress(word.replace(/[^a-zA-Z']/g, ""))
               }
               suppressHighlighting
             >
-              {word + (idx < words.length - 1 ? " " : "")}
+              <Text style={isActive ? styles.underlineWord : undefined}>
+                {word}
+              </Text>
+              {idx < words.length - 1 && " "}
             </Text>
           ))}
         </Text>
         <View style={styles.translateBox}>
           <TouchableOpacity
             style={styles.translateIcon}
-            onPress={() => onTranslate?.(segment!)} // Pass the segment directly
+            onPress={() => onTranslate?.(segment!)}
           >
             <Ionicons name="language-outline" size={18} color={Colors.tint} />
           </TouchableOpacity>
@@ -141,6 +144,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   transcriptText: { flex: 1, color: Colors.black, fontSize: 15 },
+  wordText: {
+    // New style for individual words
+    flexDirection: "row",
+  },
   underlineWord: {
     textDecorationLine: "underline",
     color: Colors.tint,
