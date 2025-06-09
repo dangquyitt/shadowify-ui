@@ -39,7 +39,7 @@ const PopularVideos = () => {
           <TouchableOpacity>
             <View style={{ alignItems: "center", width }}>
               <ImageBackground
-                source={{ uri: item.thumbnailURL }}
+                source={{ uri: item.thumbnail }}
                 style={[
                   styles.popularCard,
                   {

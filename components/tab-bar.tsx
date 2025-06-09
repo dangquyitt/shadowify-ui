@@ -46,8 +46,10 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       />
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+
+        // Ensure the label is always a string
         const label =
-          options.tabBarLabel !== undefined
+          typeof options.tabBarLabel === "string"
             ? options.tabBarLabel
             : options.title !== undefined
               ? options.title

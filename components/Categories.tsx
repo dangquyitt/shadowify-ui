@@ -15,15 +15,15 @@ type Props = {
 
 const Categories = ({ onCategoryChanged }: Props) => {
   const scrollRef = useRef<ScrollView>(null);
-  const itemRef = useRef<(TouchableOpacity | null)[]>([]);
+  const itemRef = useRef<(View | null)[]>([]);
   const [activeIndex, setActiveIndex] = React.useState(0);
 
   const handleSelectCategory = (index: number) => {
     const selected = itemRef.current[index];
     setActiveIndex(index);
 
-    selected?.measure((x) => {
-      scrollRef.current?.scrollTo({ x: x, y: 0, animated: true });
+    selected?.measure((x, y, width, height, pageX, pageY) => {
+      scrollRef.current?.scrollTo({ x: pageX, y: 0, animated: true });
     });
 
     onCategoryChanged(newsCategoryList[index].slug);
@@ -38,21 +38,26 @@ const Categories = ({ onCategoryChanged }: Props) => {
         contentContainerStyle={styles.itemsWrapper}
       >
         {newsCategoryList.map((item, index) => (
-          <TouchableOpacity
-            ref={(el) => itemRef.current[index]}
+          <View
+            ref={(el) => {
+              itemRef.current[index] = el;
+            }}
             key={index}
-            style={[styles.item, activeIndex === index && styles.itemActive]}
-            onPress={() => handleSelectCategory(index)}
           >
-            <Text
-              style={[
-                styles.itemText,
-                activeIndex === index && styles.itemTextActive,
-              ]}
+            <TouchableOpacity
+              style={[styles.item, activeIndex === index && styles.itemActive]}
+              onPress={() => handleSelectCategory(index)}
             >
-              {item.title}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.itemText,
+                  activeIndex === index && styles.itemTextActive,
+                ]}
+              >
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
     </View>

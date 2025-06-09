@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/colors";
 import { icon } from "@/constants/icons";
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { GestureResponderEvent, Pressable, StyleSheet } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -16,8 +16,8 @@ const TabBarButton = ({
   routeName,
   label,
 }: {
-  onPress: Function;
-  onLongPress: Function;
+  onPress: (event: GestureResponderEvent) => void;
+  onLongPress: (event: GestureResponderEvent) => void;
   isFocused: boolean;
   routeName: string;
   label: string;
