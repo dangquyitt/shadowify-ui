@@ -3,7 +3,7 @@ import { dictionaryApi } from "@/services/api";
 import { DictionaryEntry } from "@/types/dictionary";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -26,42 +26,165 @@ export default function DictionaryModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
-  // Function to play pronunciation audio
+  // Use a ref to track if component is mounted
+  const isMounted = useRef(true);  // Function to play pronunciation audio
   const playPronunciation = async (audioUrl: string) => {
     try {
+      // Prevent multiple simultaneous playbacks
+      if (isPlayingAudio) return;
+
       setIsPlayingAudio(true);
+      
+      console.log("Playing pronunciation from URL:", audioUrl);
 
       // Ensure the URL is properly formatted
       const fullUrl = audioUrl.startsWith("http")
         ? audioUrl
         : `https:${audioUrl}`;
 
-      // Create and load a sound object for this specific audio
-      const { sound } = await Audio.Sound.createAsync({ uri: fullUrl });
+      // If there's already a sound object, unload it first
+      if (sound) {
+        console.log("Unloading previous sound");
+        // Remove any existing listeners before unloading
+        sound.setOnPlaybackStatusUpdate(null);
+        await sound.unloadAsync();
+        setSound(null);
+      }
 
-      // Play the audio
-      await sound.playAsync();
-
-      // Reset playing state after audio completes
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          setIsPlayingAudio(false);
-          // Clean up the sound object
-          sound.unloadAsync();
-        }
+      // Configure audio session
+      console.log("Setting audio mode");
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        // Important: Set to DoNotMix to avoid conflicts with YouTube player
+        // Use numeric values instead of enum since they might not be exported
+        interruptionModeIOS: 1, // DoNotMix = 1
+        interruptionModeAndroid: 1, // DoNotMix = 1
       });
+      
+      // Small delay to ensure audio mode changes have taken effect
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Fallback timeout in case the status update doesn't trigger
-      setTimeout(() => {
-        setIsPlayingAudio(false);
-        sound.unloadAsync();
-      }, 3000);
+      // Set a higher limit on event listeners if method exists
+      try {
+        const EventEmitter = require('events');
+        EventEmitter.defaultMaxListeners = Math.max(EventEmitter.defaultMaxListeners, 20);
+      } catch (error) {
+        console.log("Could not set EventEmitter max listeners:", error);
+      }
+      
+      console.log("Creating new sound object");
+      
+      try {
+        console.log("Attempting to create and play sound...");
+        
+        // Try the simpler approach first - create, load and play in one step
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: fullUrl },
+          { shouldPlay: true, volume: 1.0 },
+          (status) => {
+            if (!isMounted.current) return;
+            
+            if (status.isLoaded && status.didJustFinish) {
+              console.log("Playback finished");
+              setIsPlayingAudio(false);
+            }
+          }
+        );
+        
+        console.log("Sound created successfully, storing in state");
+        // Store sound object in state
+        setSound(newSound);
+      } catch (err) {
+        console.error("Error with createAsync, trying fallback method:", err);
+        
+        try {
+          // Fallback to the separate load/play approach
+          const soundObject = new Audio.Sound();
+          
+          // Set up status updates
+          soundObject.setOnPlaybackStatusUpdate((status) => {
+            if (!isMounted.current) return;
+            
+            if (status.isLoaded && status.didJustFinish) {
+              console.log("Playback finished");
+              setIsPlayingAudio(false);
+            }
+          });
+          
+          console.log("Loading audio from URL:", fullUrl);
+          // Load and play the sound
+          await soundObject.loadAsync({ uri: fullUrl });
+          console.log("Playing audio...");
+          await soundObject.playAsync();
+          
+          console.log("Storing sound object in state");
+          setSound(soundObject);
+        } catch (fallbackError) {
+          console.error("Fallback approach also failed:", fallbackError);
+          if (isMounted.current) {
+            setIsPlayingAudio(false);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error playing audio:", error);
-      setIsPlayingAudio(false);
+      if (isMounted.current) {
+        setIsPlayingAudio(false);
+      }
     }
   };
+
+  // Clean up sound resources when component unmounts
+  useEffect(() => {
+    // Reset global EventEmitter max listeners if needed
+    try {
+      const EventEmitter = require('events');
+      const originalLimit = EventEmitter.defaultMaxListeners;
+      
+      // Restore to a safe value on unmount
+      return () => {
+        // Mark component as unmounted
+        isMounted.current = false;
+
+        if (sound) {
+          console.log("Unmounting - cleaning up sound resources");
+          // Remove all listeners first
+          sound.setOnPlaybackStatusUpdate(null);
+
+          // Then unload the sound
+          sound
+            .unloadAsync()
+            .catch((error) => console.error("Error unloading sound:", error));
+        }
+        
+        // Reset the event emitter max listeners
+        EventEmitter.defaultMaxListeners = originalLimit;
+      };
+    } catch (error) {
+      console.error("Error setting up cleanup:", error);
+      return () => {
+        isMounted.current = false;
+        if (sound) {
+          sound.setOnPlaybackStatusUpdate(null);
+          sound.unloadAsync().catch(e => console.error(e));
+        }
+      };
+    }
+  }, []);
+
+  // Separate effect for handling sound changes
+  useEffect(() => {
+    // No cleanup needed here as the main unmount effect handles it
+    return () => {
+      // This effect's cleanup is specifically for when the sound object changes
+      // but the component remains mounted
+    };
+  }, [sound]);
 
   useEffect(() => {
     const fetchDefinition = async () => {
@@ -71,21 +194,29 @@ export default function DictionaryModal({
         const response = await dictionaryApi.getWordDefinition(word);
 
         // Take the first entry from the response
-        if (response && response.length > 0) {
+        if (response && response.length > 0 && isMounted.current) {
           setDictionaryData(response[0]);
-        } else {
+        } else if (isMounted.current) {
           setError(`No definition found for "${word}"`);
         }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch definition"
-        );
+        if (isMounted.current) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch definition"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted.current) {
+          setLoading(false);
+        }
       }
     };
 
     fetchDefinition();
+
+    return () => {
+      // Nothing to clean up for this specific effect
+    };
   }, [word]);
 
   const renderContent = () => {
@@ -166,13 +297,7 @@ export default function DictionaryModal({
                       {phonetic.audio && phonetic.audio.trim() !== "" && (
                         <TouchableOpacity
                           style={styles.pronunciationAudioButton}
-                          onPress={() =>
-                            playPronunciation(
-                              phonetic.audio!.startsWith("http")
-                                ? phonetic.audio!
-                                : `https:${phonetic.audio!}`
-                            )
-                          }
+                          onPress={() => playPronunciation(phonetic.audio!)}
                           disabled={isPlayingAudio}
                         >
                           <Ionicons

@@ -83,6 +83,8 @@ export default function VideoDetailScreen() {
 
   function handleDictionaryClose() {
     setShowDictionary(false);
+    // Don't auto-resume playback as it might be jarring for the user
+    // User can manually play again if desired
   }
 
   function handleTranslate(segment: Segment) {
@@ -174,36 +176,48 @@ export default function VideoDetailScreen() {
 
   // Periodically fetch current time from YouTube player
   useEffect(() => {
-    const interval = setInterval(async () => {
-      if (playerRef.current) {
-        const elapsed_sec = await playerRef.current.getCurrentTime(); // Get current time in seconds
+    // Don't run the interval when dictionary modal is open
+    if (showDictionary) return;
+    
+    // Set a higher limit on listeners for the YouTube player
+    if (playerRef.current && playerRef.current.setMaxListeners) {
+      playerRef.current.setMaxListeners(20);
+    }
+    
+    const intervalId = setInterval(async () => {
+      if (playerRef.current && !showDictionary) {
+        try {
+          const elapsed_sec = await playerRef.current.getCurrentTime(); // Get current time in seconds
 
-        // Update currentTime and calculate percent
-        setCurrentTime(elapsed_sec);
-        const calculatedPercent =
-          duration > 0 ? (elapsed_sec / duration) * 100 : 0;
+          // Update currentTime and calculate percent
+          setCurrentTime(elapsed_sec);
+          const calculatedPercent =
+            duration > 0 ? (elapsed_sec / duration) * 100 : 0;
 
-        // Auto-update current segment when live sub is active
-        if (liveSubActive && segments.length > 0) {
-          const foundSegment = segments.find(
-            (seg) =>
-              typeof seg.start_sec === "number" &&
-              typeof seg.end_sec === "number" &&
-              elapsed_sec >= seg.start_sec &&
-              elapsed_sec < seg.end_sec
-          );
+          // Auto-update current segment when live sub is active
+          if (liveSubActive && segments.length > 0) {
+            const foundSegment = segments.find(
+              (seg) =>
+                typeof seg.start_sec === "number" &&
+                typeof seg.end_sec === "number" &&
+                elapsed_sec >= seg.start_sec &&
+                elapsed_sec < seg.end_sec
+            );
 
-          if (foundSegment && foundSegment.id !== currentLine) {
-            setCurrentLine(foundSegment.id);
-            // Auto-scroll to the current segment
-            scrollToSegment(foundSegment.id);
+            if (foundSegment && foundSegment.id !== currentLine) {
+              setCurrentLine(foundSegment.id);
+              // Auto-scroll to the current segment
+              scrollToSegment(foundSegment.id);
+            }
           }
+        } catch (error) {
+          console.log("Error getting currentTime:", error);
         }
       }
-    }, 100); // Refresh every 100ms
+    }, 200); // Reduced frequency to every 200ms
 
     return () => {
-      clearInterval(interval);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [duration, liveSubActive, segments, currentLine, scrollViewHeight]);
 
@@ -298,13 +312,16 @@ export default function VideoDetailScreen() {
               disablekb: true,
             }}
             onProgress={({ currentTime: t }) => {
+              if (showDictionary) return; // Skip updates when dictionary is open
+              
               setCurrentTime(t);
 
               // Calculate the percentage of progress directly
               const percent = duration > 0 ? (t / duration) * 100 : 0;
-              console.log("Current Time:", t);
-              console.log("Duration:", duration);
-              console.log("Percent:", percent);
+              // Reduce logging to avoid console clutter
+              // console.log("Current Time:", t);
+              // console.log("Duration:", duration);
+              // console.log("Percent:", percent);
 
               // Fetch duration if not already set
               if (playerRef.current && (!duration || duration < 1)) {

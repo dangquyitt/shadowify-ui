@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -32,21 +32,37 @@ export const ShadowingRecorder = ({
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [pulseAnim] = useState(() => new Animated.Value(1));
+  // Track component mount state to prevent state updates after unmount
+  const isMounted = useRef(true);
 
+  // Request audio permissions and set up audio mode
   useEffect(() => {
-    (async () => {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission to access microphone was denied");
-        return;
-      }
+    let isMounted = true;
 
-      // Set audio mode for iOS
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
+    (async () => {
+      try {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (!isMounted) return;
+
+        if (status !== "granted") {
+          Alert.alert("Permission to access microphone was denied");
+          return;
+        }
+
+        // Set audio mode for iOS
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+      } catch (error) {
+        console.error("Audio permission error:", error);
+      }
     })();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // pulse animation for record button
@@ -71,8 +87,34 @@ export const ShadowingRecorder = ({
     } else {
       pulseAnim.setValue(1);
     }
-    return () => anim && anim.stop();
+    return () => {
+      if (anim) {
+        anim.stop();
+      }
+    };
   }, [isRecording]);
+
+  // Clean up recording on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+
+      // Clean up any ongoing recording when component unmounts
+      if (recording) {
+        (async () => {
+          try {
+            // Remove any listeners first (if necessary)
+            recording.setOnRecordingStatusUpdate(null);
+
+            // Then stop and unload to clean up resources
+            await recording.stopAndUnloadAsync();
+          } catch (error) {
+            console.error("Error cleaning up recording:", error);
+          }
+        })();
+      }
+    };
+  }, []);
 
   // Track whether we have actually started recording
   const [hasStartedRecording, setHasStartedRecording] = useState(false);
@@ -80,32 +122,59 @@ export const ShadowingRecorder = ({
   const handleRecording = async () => {
     try {
       if (!isRecording) {
-        const { recording } = await Audio.Recording.createAsync(
+        // Make sure any existing recording is properly cleaned up
+        if (recording) {
+          recording.setOnRecordingStatusUpdate(null);
+          await recording.stopAndUnloadAsync();
+        }
+
+        const { recording: newRecording } = await Audio.Recording.createAsync(
           Audio.RecordingOptionsPresets.HIGH_QUALITY
         );
-        setRecording(recording);
-        setHasStartedRecording(true);
-        await recording.startAsync();
+
+        // Set up status monitoring
+        newRecording.setOnRecordingStatusUpdate((status) => {
+          // Status update handling if needed
+        });
+
+        if (isMounted.current) {
+          setRecording(newRecording);
+          setHasStartedRecording(true);
+        }
+
+        await newRecording.startAsync();
       } else {
         if (recording) {
+          // Remove status updates listener
+          recording.setOnRecordingStatusUpdate(null);
+
           await recording.stopAndUnloadAsync();
           const uri = recording.getURI();
-          setRecording(null);
-          setHasStartedRecording(false);
+
+          if (isMounted.current) {
+            setRecording(null);
+            setHasStartedRecording(false);
+          }
+
           // Only try to upload if we've actually recorded something
-          if (uri && hasStartedRecording) {
+          if (uri && hasStartedRecording && isMounted.current) {
             await uploadRecording(uri);
           }
         }
       }
     } catch (err) {
       console.error("Recording error", err);
+      if (isMounted.current) {
+        // Reset state in case of error
+        setHasStartedRecording(false);
+      }
     }
   };
 
   // Remove redundant saving of audio file to the cache directory
   const uploadRecording = async (uri: string) => {
     try {
+      if (!isMounted.current) return;
       setIsUploading(true);
 
       // Make sure the uri isn't empty
@@ -117,7 +186,7 @@ export const ShadowingRecorder = ({
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         console.warn("Audio file not found:", uri);
-        if (hasStartedRecording) {
+        if (hasStartedRecording && isMounted.current) {
           Alert.alert(
             "Recording file missing",
             "Audio file was not found. Maybe the app reloaded?"
@@ -136,17 +205,25 @@ export const ShadowingRecorder = ({
         const transcribedText = await speechApi.transcribe(base64);
 
         // Call the callback with the transcribed text and the original URI
-        onRecordingComplete(transcribedText, 0, uri); // Accuracy will be calculated by parent
+        if (isMounted.current) {
+          onRecordingComplete(transcribedText, 0, uri); // Accuracy will be calculated by parent
+        }
       } catch (apiErr) {
         console.error("Speech API call failed:", apiErr);
-        Alert.alert("Error", "Failed to process audio. Server error.");
-        onRecordingComplete("Failed to transcribe audio", 0, uri);
+        if (isMounted.current) {
+          Alert.alert("Error", "Failed to process audio. Server error.");
+          onRecordingComplete("Failed to transcribe audio", 0, uri);
+        }
       }
     } catch (err) {
       console.error("Upload failed", err);
-      Alert.alert("Error", "Failed to process audio");
+      if (isMounted.current) {
+        Alert.alert("Error", "Failed to process audio");
+      }
     } finally {
-      setIsUploading(false);
+      if (isMounted.current) {
+        setIsUploading(false);
+      }
     }
   };
 
