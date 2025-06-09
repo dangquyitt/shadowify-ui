@@ -178,12 +178,12 @@ export default function VideoDetailScreen() {
   useEffect(() => {
     // Don't run the interval when dictionary modal is open
     if (showDictionary) return;
-    
+
     // Set a higher limit on listeners for the YouTube player
     if (playerRef.current && playerRef.current.setMaxListeners) {
       playerRef.current.setMaxListeners(20);
     }
-    
+
     const intervalId = setInterval(async () => {
       if (playerRef.current && !showDictionary) {
         try {
@@ -313,7 +313,7 @@ export default function VideoDetailScreen() {
             }}
             onProgress={({ currentTime: t }) => {
               if (showDictionary) return; // Skip updates when dictionary is open
-              
+
               setCurrentTime(t);
 
               // Calculate the percentage of progress directly

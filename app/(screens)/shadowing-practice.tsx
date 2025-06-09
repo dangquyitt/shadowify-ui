@@ -61,29 +61,22 @@ export default function ShadowingPracticeScreen() {
     }
   };
 
-  // Sử dụng useEffect để theo dõi vị trí video và loop lại khi cần thiết
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval>;
+    if (!isPlayerReady || !playerRef.current || !endSec) return;
 
-    if (!isPaused && playerRef.current && endSec) {
-      intervalId = setInterval(async () => {
-        try {
-          const currentTime = await playerRef.current.getCurrentTime();
-          if (currentTime >= endSec) {
-            playerRef.current.seekTo(startSec, true);
-          }
-        } catch (err) {
-          console.error("Error checking video position:", err);
+    const intervalId = setInterval(async () => {
+      try {
+        const currentTime = await playerRef.current.getCurrentTime();
+        if (currentTime >= endSec) {
+          playerRef.current.seekTo(startSec, true);
         }
-      }, 500);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      } catch (err) {
+        console.error("Error checking video time:", err);
       }
-    };
-  }, [isPaused, endSec, startSec]);
+    }, 500);
+
+    return () => clearInterval(intervalId);
+  }, [isPlayerReady, endSec, startSec]);
 
   const toggleRecording = () => {
     setIsRecording((prev) => !prev);

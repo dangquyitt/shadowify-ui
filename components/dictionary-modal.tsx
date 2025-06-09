@@ -29,14 +29,14 @@ export default function DictionaryModal({
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   // Use a ref to track if component is mounted
-  const isMounted = useRef(true);  // Function to play pronunciation audio
+  const isMounted = useRef(true); // Function to play pronunciation audio
   const playPronunciation = async (audioUrl: string) => {
     try {
       // Prevent multiple simultaneous playbacks
       if (isPlayingAudio) return;
 
       setIsPlayingAudio(true);
-      
+
       console.log("Playing pronunciation from URL:", audioUrl);
 
       // Ensure the URL is properly formatted
@@ -65,63 +65,66 @@ export default function DictionaryModal({
         interruptionModeIOS: 1, // DoNotMix = 1
         interruptionModeAndroid: 1, // DoNotMix = 1
       });
-      
+
       // Small delay to ensure audio mode changes have taken effect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Set a higher limit on event listeners if method exists
       try {
-        const EventEmitter = require('events');
-        EventEmitter.defaultMaxListeners = Math.max(EventEmitter.defaultMaxListeners, 20);
+        const EventEmitter = require("events");
+        EventEmitter.defaultMaxListeners = Math.max(
+          EventEmitter.defaultMaxListeners,
+          20
+        );
       } catch (error) {
         console.log("Could not set EventEmitter max listeners:", error);
       }
-      
+
       console.log("Creating new sound object");
-      
+
       try {
         console.log("Attempting to create and play sound...");
-        
+
         // Try the simpler approach first - create, load and play in one step
         const { sound: newSound } = await Audio.Sound.createAsync(
           { uri: fullUrl },
           { shouldPlay: true, volume: 1.0 },
           (status) => {
             if (!isMounted.current) return;
-            
+
             if (status.isLoaded && status.didJustFinish) {
               console.log("Playback finished");
               setIsPlayingAudio(false);
             }
           }
         );
-        
+
         console.log("Sound created successfully, storing in state");
         // Store sound object in state
         setSound(newSound);
       } catch (err) {
         console.error("Error with createAsync, trying fallback method:", err);
-        
+
         try {
           // Fallback to the separate load/play approach
           const soundObject = new Audio.Sound();
-          
+
           // Set up status updates
           soundObject.setOnPlaybackStatusUpdate((status) => {
             if (!isMounted.current) return;
-            
+
             if (status.isLoaded && status.didJustFinish) {
               console.log("Playback finished");
               setIsPlayingAudio(false);
             }
           });
-          
+
           console.log("Loading audio from URL:", fullUrl);
           // Load and play the sound
           await soundObject.loadAsync({ uri: fullUrl });
           console.log("Playing audio...");
           await soundObject.playAsync();
-          
+
           console.log("Storing sound object in state");
           setSound(soundObject);
         } catch (fallbackError) {
@@ -143,9 +146,9 @@ export default function DictionaryModal({
   useEffect(() => {
     // Reset global EventEmitter max listeners if needed
     try {
-      const EventEmitter = require('events');
+      const EventEmitter = require("events");
       const originalLimit = EventEmitter.defaultMaxListeners;
-      
+
       // Restore to a safe value on unmount
       return () => {
         // Mark component as unmounted
@@ -161,7 +164,7 @@ export default function DictionaryModal({
             .unloadAsync()
             .catch((error) => console.error("Error unloading sound:", error));
         }
-        
+
         // Reset the event emitter max listeners
         EventEmitter.defaultMaxListeners = originalLimit;
       };
@@ -171,7 +174,7 @@ export default function DictionaryModal({
         isMounted.current = false;
         if (sound) {
           sound.setOnPlaybackStatusUpdate(null);
-          sound.unloadAsync().catch(e => console.error(e));
+          sound.unloadAsync().catch((e) => console.error(e));
         }
       };
     }
