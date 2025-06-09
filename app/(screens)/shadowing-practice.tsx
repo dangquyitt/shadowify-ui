@@ -287,7 +287,10 @@ export default function ShadowingPracticeScreen() {
               <Text style={styles.speechResultTitle}>Your Speech</Text>
             </View>
             <View style={styles.speechResultBox}>
-              <MarkedText markedWords={textComparison.markedSpokenWords} />
+              <MarkedText
+                markedWords={textComparison.markedSpokenWords}
+                onWordPress={handleWordPress}
+              />
             </View>
           </View>
         )}
