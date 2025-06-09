@@ -1,3 +1,4 @@
+import VideoItem from "@/components/video-item";
 import { Colors } from "@/constants/colors";
 import { videoApi } from "@/services/api";
 import { Video } from "@/types/video";
@@ -8,15 +9,14 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Keyboard,
+  Platform,
+  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  SafeAreaView,
-  Platform,
 } from "react-native";
-import VideoItem from "@/components/video-item";
 
 const RECENT_KEY = "recent_searches";
 const MAX_RECENT = 20;
@@ -74,11 +74,14 @@ const SearchModalScreen = () => {
     const q = search.trim();
     if (q.length === 0) return;
     setLoadingMore(true);
-    videoApi.getVideos(page + 1, 10, q).then((res) => {
-      setResults((prev) => [...prev, ...res.videos]);
-      setPage((p) => p + 1);
-      setHasMore(res.hasMore);
-    }).finally(() => setLoadingMore(false));
+    videoApi
+      .getVideos(page + 1, 10, q)
+      .then((res) => {
+        setResults((prev) => [...prev, ...res.videos]);
+        setPage((p) => p + 1);
+        setHasMore(res.hasMore);
+      })
+      .finally(() => setLoadingMore(false));
   };
 
   const handleRecentPress = (item: string) => {
@@ -165,7 +168,11 @@ const SearchModalScreen = () => {
                 keyboardShouldPersistTaps="handled"
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
-                ListFooterComponent={loadingMore ? <Text style={styles.loadingText}>Loading more...</Text> : null}
+                ListFooterComponent={
+                  loadingMore ? (
+                    <Text style={styles.loadingText}>Loading more...</Text>
+                  ) : null
+                }
                 style={{ flex: 1 }}
                 contentContainerStyle={{ paddingBottom: 32 }}
               />
@@ -183,11 +190,11 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: Colors.white,
-    paddingTop: Platform.OS === 'android' ? 32 : 0,
+    paddingTop: Platform.OS === "android" ? 32 : 0,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 8,
@@ -204,8 +211,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   searchText: {
@@ -230,7 +237,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   recentTitle: {
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.softText,
     marginBottom: 6,
   },
@@ -249,16 +256,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     minHeight: 0,
-    maxHeight: '100%',
+    maxHeight: "100%",
   },
   loadingText: {
     color: Colors.softText,
     padding: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   noResultText: {
     color: Colors.softText,
     padding: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

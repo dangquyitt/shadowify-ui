@@ -5,16 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  FlatList,
-  Keyboard,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import VideoItem from "./video-item";
+import { Keyboard, StyleSheet, TextInput, View } from "react-native";
 
 type Props = {};
 
@@ -54,7 +45,6 @@ const SearchBar = (props: Props) => {
     }, 400); // 400ms debounce
     return () => clearTimeout(handler);
   }, [search]);
-
 
   // Instead of showing overlay, navigate to modal
   const handleFocus = () => {
@@ -120,7 +110,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 20,
     zIndex: 1,
-    position: 'relative',
+    position: "relative",
   },
   // overlayBox removed
   searchBar: {

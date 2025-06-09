@@ -33,11 +33,12 @@ export const videoApi = {
    * @param pageSize - Number of items per page
    * @returns Promise with an array of Video objects
    */
-  getVideos: async (page: number = 1, pageSize: number = 10, q?: string): Promise<{videos: Video[], hasMore: boolean}> => {
+  getVideos: async (page: number = 1, pageSize: number = 10, q?: string, type?: string): Promise<{videos: Video[], hasMore: boolean}> => {
     try {
-      // Add query param 'q' if provided
+      // Add query param 'q' and 'type' if provided
       const query = [`page=${page}`, `page_size=${pageSize}`];
       if (q && q.length > 0) query.push(`q=${encodeURIComponent(q)}`);
+      if (type && type.length > 0) query.push(`type=${encodeURIComponent(type)}`);
       const url = `/videos?${query.join("&")}`;
       const response = await api.get<{ 
         code: string,
@@ -58,6 +59,12 @@ export const videoApi = {
     } catch (error) {
       throw error;
     }
+  },
+
+  getPopularVideos: async (): Promise<Video[]> => {
+    // Always get 5 popular videos
+    const res = await videoApi.getVideos(1, 5, undefined, 'popular');
+    return res.videos;
   },
 
   /**

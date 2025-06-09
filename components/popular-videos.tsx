@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/colors";
-import { mockVideos } from "@/constants/mock-videos";
-import React, { useState } from "react";
+import { videoApi } from "@/services/api";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   ImageBackground,
@@ -17,6 +18,23 @@ import Pagination from "./pagination";
 const PopularVideos = () => {
   const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [popularVideos, setPopularVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    videoApi
+      .getPopularVideos()
+      .then((videos) => {
+        if (mounted) setPopularVideos(videos);
+      })
+      .finally(() => setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const onMomentumScrollEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>
@@ -28,39 +46,50 @@ const PopularVideos = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>The most popular video</Text>
-      <FlatList
-        data={mockVideos}
-        keyExtractor={(item) => item.id}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onMomentumScrollEnd}
-        renderItem={({ item }) => (
-          <TouchableOpacity>
-            <View style={{ alignItems: "center", width }}>
-              <ImageBackground
-                source={{ uri: item.thumbnail }}
-                style={[
-                  styles.popularCard,
-                  {
-                    width: width - 32,
-                    height: ((width - 32) * 9) / 16,
-                  },
-                ]}
-                imageStyle={styles.popularCardImage}
-              >
-                <View style={styles.overlay} />
-                <View style={styles.popularContent}>
-                  <Text style={styles.popularTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                </View>
-              </ImageBackground>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-      <Pagination items={mockVideos} paginationIndex={currentIndex} />
+      {loading ? (
+        <Text style={{ textAlign: "center", padding: 16 }}>Loading...</Text>
+      ) : (
+        <FlatList
+          data={popularVideos}
+          keyExtractor={(item) => item.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onMomentumScrollEnd}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/(screens)/video-detail",
+                  params: { videoId: item.id },
+                })
+              }
+            >
+              <View style={{ alignItems: "center", width }}>
+                <ImageBackground
+                  source={{ uri: item.thumbnail }}
+                  style={[
+                    styles.popularCard,
+                    {
+                      width: width - 32,
+                      height: ((width - 32) * 9) / 16,
+                    },
+                  ]}
+                  imageStyle={styles.popularCardImage}
+                >
+                  <View style={styles.overlay} />
+                  <View style={styles.popularContent}>
+                    <Text style={styles.popularTitle} numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                  </View>
+                </ImageBackground>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+      <Pagination items={popularVideos} paginationIndex={currentIndex} />
     </View>
   );
 };
