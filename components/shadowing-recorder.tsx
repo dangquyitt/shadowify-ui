@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
+import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import React, { useEffect, useState } from "react";
 import {
@@ -29,16 +29,23 @@ export const ShadowingRecorder = ({
   toggleRecording,
   onRecordingComplete,
 }: Props) => {
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [pulseAnim] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     (async () => {
-      const status = await AudioModule.requestRecordingPermissionsAsync();
-      if (!status.granted) {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== "granted") {
         Alert.alert("Permission to access microphone was denied");
+        return;
       }
+
+      // Set audio mode for iOS
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
     })();
   }, []);
 
@@ -70,43 +77,31 @@ export const ShadowingRecorder = ({
   // Track whether we have actually started recording
   const [hasStartedRecording, setHasStartedRecording] = useState(false);
 
-  useEffect(() => {
-    const handleRecording = async () => {
-      try {
-        if (isRecording) {
-          await recorder.prepareToRecordAsync();
-          // log base64 of previous file (if exists)
-          if (recorder.uri) {
-            try {
-              const prev = await FileSystem.readAsStringAsync(recorder.uri, {
-                encoding: FileSystem.EncodingType.Base64,
-              });
-              console.log(
-                "📀 Base64 on start:",
-                prev.substring(0, 100) + "..."
-              );
-            } catch (e) {
-              console.warn("Cannot preview base64", e);
-            }
-          }
-          recorder.record();
-          setHasStartedRecording(true);
-        } else {
-          await recorder.stop();
-          // stop animation reset
-          pulseAnim.setValue(1);
+  const handleRecording = async () => {
+    try {
+      if (!isRecording) {
+        const { recording } = await Audio.Recording.createAsync(
+          Audio.RecordingOptionsPresets.HIGH_QUALITY
+        );
+        setRecording(recording);
+        setHasStartedRecording(true);
+        await recording.startAsync();
+      } else {
+        if (recording) {
+          await recording.stopAndUnloadAsync();
+          const uri = recording.getURI();
+          setRecording(null);
+          setHasStartedRecording(false);
           // Only try to upload if we've actually recorded something
-          if (recorder.uri && hasStartedRecording) {
-            await uploadRecording(recorder.uri);
+          if (uri && hasStartedRecording) {
+            await uploadRecording(uri);
           }
         }
-      } catch (err) {
-        console.error("Recording error", err);
       }
-    };
-
-    handleRecording();
-  }, [isRecording, hasStartedRecording]);
+    } catch (err) {
+      console.error("Recording error", err);
+    }
+  };
 
   // Remove redundant saving of audio file to the cache directory
   const uploadRecording = async (uri: string) => {
@@ -157,11 +152,12 @@ export const ShadowingRecorder = ({
 
   const handlePress = async () => {
     // Only try to preview base64 if we've actually recorded something before
-    if (!isRecording && hasStartedRecording && recorder.uri) {
+    if (!isRecording && hasStartedRecording && recording?.getURI()) {
       try {
-        const fileInfo = await FileSystem.getInfoAsync(recorder.uri);
+        const uri = recording.getURI();
+        const fileInfo = await FileSystem.getInfoAsync(uri);
         if (fileInfo.exists) {
-          const b64 = await FileSystem.readAsStringAsync(recorder.uri, {
+          const b64 = await FileSystem.readAsStringAsync(uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
           console.log(
@@ -174,6 +170,7 @@ export const ShadowingRecorder = ({
       }
     }
     toggleRecording();
+    await handleRecording();
   };
 
   return (

@@ -30,13 +30,6 @@ export default function ScreensLayout() {
           presentation: "fullScreenModal",
         }}
       />
-      <Stack.Screen
-        name="dictionary-demo"
-        options={{
-          title: "Dictionary",
-          presentation: "card",
-        }}
-      />
     </Stack>
   );
 }
