@@ -2,7 +2,7 @@ import { Colors } from "@/constants/colors";
 import { dictionaryApi } from "@/services/api";
 import { DictionaryEntry } from "@/types/dictionary";
 import { Ionicons } from "@expo/vector-icons";
-import * as Audio from "expo-audio";
+import { Audio } from "expo-av";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -37,21 +37,26 @@ export default function DictionaryModal({
         ? audioUrl
         : `https:${audioUrl}`;
 
-      // Create a new audio player for this specific audio
-      const player = Audio.createAudioPlayer({ uri: fullUrl });
-
-      // Wait for the player to be ready
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // Create and load a sound object for this specific audio
+      const { sound } = await Audio.Sound.createAsync({ uri: fullUrl });
 
       // Play the audio
-      player.play();
+      await sound.playAsync();
 
-      // Reset playing state after audio duration (estimated 3 seconds for pronunciation)
+      // Reset playing state after audio completes
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlayingAudio(false);
+          // Clean up the sound object
+          sound.unloadAsync();
+        }
+      });
+
+      // Fallback timeout in case the status update doesn't trigger
       setTimeout(() => {
         setIsPlayingAudio(false);
-        // Clean up the player
-        player.remove();
-      }, 1000);
+        sound.unloadAsync();
+      }, 3000);
     } catch (error) {
       console.error("Error playing audio:", error);
       setIsPlayingAudio(false);
