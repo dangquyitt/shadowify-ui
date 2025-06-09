@@ -1,5 +1,5 @@
-import { Header } from "@/components/Header";
-import { Colors } from "@/constants/Colors";
+import { Header } from "@/components/header";
+import { Colors } from "@/constants/colors";
 import { Feather } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {

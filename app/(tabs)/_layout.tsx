@@ -1,5 +1,5 @@
-import { TabBar } from "@/components/TabBar";
-import { Colors } from "@/constants/Colors";
+import { TabBar } from "@/components/tab-bar";
+import { Colors } from "@/constants/colors";
 import { Tabs } from "expo-router";
 import React from "react";
 

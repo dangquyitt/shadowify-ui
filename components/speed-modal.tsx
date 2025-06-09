@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/constants/colors";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function SpeedModal({

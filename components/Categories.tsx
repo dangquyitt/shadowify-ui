@@ -1,5 +1,5 @@
-import newsCategoryList from "@/constants/Categories";
-import { Colors } from "@/constants/Colors";
+import newsCategoryList from "@/constants/categories";
+import { Colors } from "@/constants/colors";
 import React, { useRef } from "react";
 import {
   ScrollView,

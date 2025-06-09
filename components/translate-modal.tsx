@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/constants/colors";
 import { translateApi } from "@/services/api"; // Use the translate API from api.ts
 import { Segment } from "@/types/segment";
 import { Video } from "@/types/video";

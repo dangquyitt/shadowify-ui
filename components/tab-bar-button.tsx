@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/Colors";
-import { icon } from "@/constants/Icons";
+import { Colors } from "@/constants/colors";
+import { icon } from "@/constants/icons";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import Animated, {

@@ -1,5 +1,5 @@
-import TabBarButton from "@/components/TabBarButton";
-import { Colors } from "@/constants/Colors";
+import TabBarButton from "@/components/tab-bar-button";
+import { Colors } from "@/constants/colors";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useState } from "react";
 import { LayoutChangeEvent, StyleSheet, View } from "react-native";

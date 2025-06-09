@@ -21,5 +21,10 @@ export const Colors = {
     antonymBackground: '#FFE8E8',
     antonymBorder: '#F44336',
     antonymText: '#C62828',
+    // Auth colors
+    primary: '#FF4C4C',
+    text: '#333333',
+    textSecondary: '#666666',
+    textTertiary: '#999999',
   };
   

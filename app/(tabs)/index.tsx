@@ -1,10 +1,10 @@
-import Categories from "@/components/Categories";
-import { Header } from "@/components/Header";
-import PopularVideos from "@/components/PopularVideos";
-import RecommendedChannels from "@/components/RecommendedChannels";
-import SearchBar from "@/components/SearchBar";
-import { Colors } from "@/constants/Colors";
-import { useVideos } from "@/hooks/useVideos";
+import Categories from "@/components/categories";
+import { Header } from "@/components/header";
+import PopularVideos from "@/components/popular-videos";
+import RecommendedChannels from "@/components/recommended-channels";
+import SearchBar from "@/components/search-bar";
+import { Colors } from "@/constants/colors";
+import { useVideos } from "@/hooks/use-videos";
 import { Video } from "@/types/video";
 import { useRouter } from "expo-router";
 import React from "react";

@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../constants/Colors";
+import { Colors } from "../constants/colors";
 import { speechApi } from "../services/api";
 
 type Props = {

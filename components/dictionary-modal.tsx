@@ -1,4 +1,4 @@
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/constants/colors";
 import { dictionaryApi } from "@/services/api";
 import { DictionaryEntry } from "@/types/dictionary";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,7 +51,7 @@ export default function DictionaryModal({
         setIsPlayingAudio(false);
         // Clean up the player
         player.remove();
-      }, 3000);
+      }, 1000);
     } catch (error) {
       console.error("Error playing audio:", error);
       setIsPlayingAudio(false);

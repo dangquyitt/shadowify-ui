@@ -1,5 +1,5 @@
 // TranscriptLine.tsx
-import { Colors } from "@/constants/Colors";
+import { Colors } from "@/constants/colors";
 import { Segment } from "@/types/segment";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";

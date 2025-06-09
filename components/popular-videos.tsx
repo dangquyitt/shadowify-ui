@@ -1,5 +1,5 @@
-import { Colors } from "@/constants/Colors";
-import { mockVideos } from "@/constants/mockVideos";
+import { Colors } from "@/constants/colors";
+import { mockVideos } from "@/constants/mock-videos";
 import React, { useState } from "react";
 import {
   FlatList,
@@ -12,7 +12,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import Pagination from "./Pagination";
+import Pagination from "./pagination";
 
 const PopularVideos = () => {
   const { width } = useWindowDimensions();
