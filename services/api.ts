@@ -153,4 +153,66 @@ export const translateApi = {
   },
 };
 
+export const favoritesApi = {
+  /**
+   * Fetches user's favorite videos with pagination support
+   * @param page - The page number to fetch
+   * @param pageSize - Number of items per page
+   * @returns Promise with an array of Video objects and pagination info
+   */
+  getFavorites: async (page: number = 1, pageSize: number = 10): Promise<{videos: Video[], hasMore: boolean}> => {
+    try {
+      const response = await api.get<{ 
+        code: string,
+        data: Video[], 
+        pagination: { 
+          page: number, 
+          page_size: number, 
+          total: number 
+        } 
+      }>(`/videos/favorites?page=${page}&page_size=${pageSize}`);
+      
+      // Calculate if there are more pages based on total items and current page
+      const totalPages = Math.ceil(response.data.pagination.total / response.data.pagination.page_size);
+      const hasMore = response.data.pagination.page < totalPages;
+      return {
+        videos: response.data.data,
+        hasMore
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Adds a video to user's favorites
+   * @param videoId - The ID of the video to add to favorites
+   * @returns Promise indicating success or failure
+   */
+  addToFavorites: async (videoId: string): Promise<boolean> => {
+    try {
+      const response = await api.post<{code: string}>(`/favorites/${videoId}`);
+      return response.data.code === 'success';
+    } catch (error) {
+      console.error('Failed to add to favorites:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Removes a video from user's favorites
+   * @param videoId - The ID of the video to remove from favorites
+   * @returns Promise indicating success or failure
+   */
+  removeFromFavorites: async (videoId: string): Promise<boolean> => {
+    try {
+      const response = await api.delete<{code: string}>(`/favorites/${videoId}`);
+      return response.data.code === 'success';
+    } catch (error) {
+      console.error('Failed to remove from favorites:', error);
+      throw error;
+    }
+  }
+};
+
 export default api;

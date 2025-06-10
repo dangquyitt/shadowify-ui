@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/colors";
 import { Video } from "@/types/video";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   Image,
@@ -13,9 +14,16 @@ import {
 interface VideoItemProps {
   video: Video;
   onPress: () => void;
+  onFavoriteToggle?: () => void;
+  isFavorite?: boolean;
 }
 
-const VideoItem: React.FC<VideoItemProps> = ({ video, onPress }) => {
+const VideoItem: React.FC<VideoItemProps> = ({
+  video,
+  onPress,
+  onFavoriteToggle,
+  isFavorite = false,
+}) => {
   const { width } = useWindowDimensions();
   const containerPadding = 32;
   const thumbWidth = Math.round((width - containerPadding * 2) * 0.35);
@@ -47,9 +55,22 @@ const VideoItem: React.FC<VideoItemProps> = ({ video, onPress }) => {
           Channel Name
         </Text>
         <Text style={styles.metaInfo} numberOfLines={1}>
-          {video.views || "1.2K"} views • {video.published || "2 days ago"}
+          1.2K views • {new Date(video.created_at).toLocaleDateString()}
         </Text>
       </View>
+
+      {onFavoriteToggle && (
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={onFavoriteToggle}
+        >
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={24}
+            color={isFavorite ? Colors.primary : Colors.darkGrey}
+          />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 };
@@ -128,6 +149,11 @@ const styles = StyleSheet.create({
   metaInfo: {
     fontSize: 11,
     color: Colors.darkGrey,
+  },
+  favoriteButton: {
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
