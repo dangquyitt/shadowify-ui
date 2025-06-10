@@ -108,7 +108,7 @@ const SearchModalScreen = () => {
     }
     router.replace({
       pathname: "/(screens)/video-detail",
-      params: { videoId: video.id },
+      params: { id: video.id },
     });
     Keyboard.dismiss();
   };

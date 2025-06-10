@@ -37,19 +37,21 @@ export default function VideoDetailScreen() {
   const playerRef = useRef<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const params = useLocalSearchParams();
-  const videoId = typeof params.videoId === "string" ? params.videoId : "";
+  const id = typeof params.id === "string" ? params.id : "";
   const lineRefs = useRef<Record<string, View | null>>({});
 
   const {
     video,
     isLoading: isLoadingVideo,
     error: videoError,
-  } = useVideo(videoId);
+    isFavorite,
+    toggleFavorite,
+  } = useVideo(id);
   const {
     segments,
     isLoading: isLoadingSegments,
     error: segmentsError,
-  } = useSegments(videoId);
+  } = useSegments(id);
 
   const [currentLine, setCurrentLine] = useState<string>("");
   const [paused, setPaused] = useState(true);
@@ -260,8 +262,17 @@ export default function VideoDetailScreen() {
           <Text style={styles.userName}>{MOCK_USER.name}</Text>
         </View>
         <View style={styles.headerIcons}>
-          <TouchableOpacity>
-            <Ionicons name="heart-outline" size={24} color={Colors.tint} />
+          <TouchableOpacity
+            onPress={toggleFavorite}
+            accessibilityLabel={
+              isFavorite ? "Remove from favorites" : "Add to favorites"
+            }
+          >
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? Colors.primary : Colors.softText}
+            />
           </TouchableOpacity>
           <TouchableOpacity style={{ marginLeft: 12 }}>
             <Feather name="share-2" size={22} color={Colors.softText} />

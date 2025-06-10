@@ -12,3 +12,7 @@ export interface Video {
   created_at: string;
   updated_at: string;
 }
+
+export interface VideoDetails extends Video {
+  is_favorite: boolean;
+}

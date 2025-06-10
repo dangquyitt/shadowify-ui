@@ -1,6 +1,6 @@
 import { DictionaryResponse } from '@/types/dictionary';
 import { Segment } from '@/types/segment';
-import { Video } from '@/types/video';
+import { Video, VideoDetails } from '@/types/video';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080'; // Use host machine IP for iOS simulator
@@ -70,11 +70,11 @@ export const videoApi = {
   /**
    * Fetches a single video by ID
    * @param id - The ID of the video to fetch
-   * @returns Promise with the Video object
+   * @returns Promise with the VideoDetails object including is_favorite status
    */
-  getVideoById: async (id: string): Promise<Video> => {
+  getVideoById: async (id: string): Promise<VideoDetails> => {
     try {
-      const response = await api.get<{data: Video }>(`/videos/${id}`);
+      const response = await api.get<{data: VideoDetails }>(`/videos/${id}`);
       return response.data.data;
     } catch (error) {
       throw error;

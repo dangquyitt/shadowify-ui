@@ -61,7 +61,7 @@ const PopularVideos = () => {
               onPress={() =>
                 router.push({
                   pathname: "/(screens)/video-detail",
-                  params: { videoId: item.id },
+                  params: { id: item.id },
                 })
               }
             >

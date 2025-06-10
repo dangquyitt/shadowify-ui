@@ -28,7 +28,10 @@ const Favorites = (props: Props) => {
   } = useFavorites();
 
   const handleVideoPress = (videoId: string) => {
-    router.push(`/(screens)/video-detail?id=${videoId}`);
+    router.push({
+      pathname: "/(screens)/video-detail",
+      params: { id: videoId },
+    });
   };
 
   const handleUnfavorite = async (videoId: string) => {

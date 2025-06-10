@@ -78,7 +78,7 @@ const SearchBar = (props: Props) => {
     }
     router.push({
       pathname: "/(screens)/video-detail",
-      params: { videoId: video.id },
+      params: { id: video.id },
     });
     Keyboard.dismiss();
   };

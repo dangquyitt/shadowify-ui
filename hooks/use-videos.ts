@@ -1,6 +1,6 @@
-import { Video } from '@/types/video';
+import { Video, VideoDetails } from '@/types/video';
 import { useCallback, useEffect, useState } from 'react';
-import { videoApi } from '../services/api';
+import { favoritesApi, videoApi } from '../services/api';
 
 export const useVideos = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -64,15 +64,17 @@ export const useVideos = () => {
 };
 
 export const useVideo = (id: string) => {
-  const [video, setVideo] = useState<Video | null>(null);
+  const [video, setVideo] = useState<VideoDetails | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   const fetchVideo = async (videoId: string) => {
     try {
       setIsLoading(true);
-      const data = await videoApi.getVideoById(videoId);
+      const data = await videoApi.getVideoById(videoId) as VideoDetails;
       setVideo(data);
+      setIsFavorite(data.is_favorite || false);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch video'));
@@ -87,6 +89,26 @@ export const useVideo = (id: string) => {
     }
   }, [id]);
 
+  const toggleFavorite = async () => {
+    if (!video) return;
+    
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        await favoritesApi.removeFromFavorites(video.id);
+      } else {
+        // Add to favorites
+        await favoritesApi.addToFavorites(video.id);
+      }
+      
+      // Update state
+      setIsFavorite(!isFavorite);
+      setVideo(prev => prev ? {...prev, is_favorite: !isFavorite} : null);
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
+  };
+
   const refetch = () => {
     if (id) {
       return fetchVideo(id);
@@ -94,5 +116,5 @@ export const useVideo = (id: string) => {
     return Promise.resolve();
   };
 
-  return { video, isLoading, error, refetch };
+  return { video, isLoading, error, refetch, isFavorite, toggleFavorite };
 };
