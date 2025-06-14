@@ -2,8 +2,8 @@ import { Header } from "@/components/header";
 import VideoItem from "@/components/video-item";
 import { Colors } from "@/constants/colors";
 import useFavorites from "@/hooks/use-favorites";
-import { router } from "expo-router";
-import React from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -26,6 +26,18 @@ const Favorites = (props: Props) => {
     refresh,
     removeFromFavorites,
   } = useFavorites();
+
+  // Refresh favorites list every time this tab gets focus
+  useFocusEffect(
+    useCallback(() => {
+      // This runs when the screen comes into focus
+      refresh();
+      // Return a cleanup function (optional)
+      return () => {
+        // This runs when the screen goes out of focus
+      };
+    }, [refresh])
+  );
 
   const handleVideoPress = (videoId: string) => {
     router.push({

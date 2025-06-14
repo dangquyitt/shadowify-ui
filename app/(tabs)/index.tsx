@@ -1,7 +1,6 @@
 import Categories from "@/components/categories";
 import { Header } from "@/components/header";
 import PopularVideos from "@/components/popular-videos";
-import RecommendedChannels from "@/components/recommended-channels";
 import SearchBar from "@/components/search-bar";
 import { Colors } from "@/constants/colors";
 import { useVideos } from "@/hooks/use-videos";
@@ -41,7 +40,7 @@ const Page = (props: Props) => {
       <Header />
       <SearchBar />
       <View style={styles.contentSections}>
-        <RecommendedChannels />
+        {/* <RecommendedChannels /> */}
         <PopularVideos />
         <Categories onCategoryChanged={onCatChanged} />
       </View>

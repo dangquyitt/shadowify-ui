@@ -1,4 +1,5 @@
 import { Video, VideoDetails } from '@/types/video';
+import { EVENTS, eventEmitter } from '@/utils/event-emitter';
 import { useCallback, useEffect, useState } from 'react';
 import { favoritesApi, videoApi } from '../services/api';
 
@@ -102,8 +103,15 @@ export const useVideo = (id: string) => {
       }
       
       // Update state
-      setIsFavorite(!isFavorite);
-      setVideo(prev => prev ? {...prev, is_favorite: !isFavorite} : null);
+      const newFavoriteState = !isFavorite;
+      setIsFavorite(newFavoriteState);
+      setVideo(prev => prev ? {...prev, is_favorite: newFavoriteState} : null);
+      
+      // Emit event so other components can react to this change
+      eventEmitter.emit(EVENTS.FAVORITE_CHANGED, {
+        videoId: video.id,
+        isFavorite: newFavoriteState
+      });
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
     }
