@@ -27,10 +27,10 @@ export const Colors = {
     textSecondary: '#666666',
     textTertiary: '#999999',
     // CEFR Level colors (từ thấp đến cao)
-    cefrA1: '#8BC34A', // Xanh lá nhạt - Beginner
-    cefrA2: '#4CAF50', // Xanh lá - Elementary
-    cefrB1: '#3F51B5', // Xanh dương - Intermediate
-    cefrB2: '#2196F3', // Xanh dương đậm - Upper Intermediate
-    cefrC1: '#FF9800', // Cam - Advanced
-    cefrC2: '#FF5722', // Cam đỏ - Mastery
+    cefrA1: '#FFAD99', // Light red-orange - Beginner
+    cefrA2: '#FF8C7F', // Lighter red - Elementary
+    cefrB1: '#FF6B66', // Medium red - Intermediate
+    cefrB2: '#FF4C4C', // App's primary red - Upper Intermediate
+    cefrC1: '#FF383B', // Deeper red - Advanced
+    cefrC2: '#E62E2E', // Darkest red - Mastery
   };

@@ -274,7 +274,7 @@ export default function ShadowingPracticeScreen() {
                 style={[
                   styles.cefrBadge,
                   {
-                    backgroundColor: Colors.tint,
+                    backgroundColor: Colors[`cefr${cefr}`] || Colors.tint,
                     paddingHorizontal: 4,
                     paddingVertical: 2,
                     fontSize: 14,

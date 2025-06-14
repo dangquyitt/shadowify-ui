@@ -1,6 +1,6 @@
-import newsCategoryList from "@/constants/categories";
 import { Colors } from "@/constants/colors";
-import React, { useRef } from "react";
+import { videoApi } from "@/services/api";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -13,10 +13,46 @@ type Props = {
   onCategoryChanged: (category: string) => void;
 };
 
+type Category = {
+  id: number;
+  title: string;
+  slug: string;
+};
+
 const Categories = ({ onCategoryChanged }: Props) => {
   const scrollRef = useRef<ScrollView>(null);
   const itemRef = useRef<(View | null)[]>([]);
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: 1, title: "All", slug: "" },
+  ]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await videoApi.getCategories();
+        if (Array.isArray(categoriesData)) {
+          // Transform the API data to match our expected format
+          const categoriesFromApi = [
+            { id: 1, title: "All", slug: "" },
+            ...categoriesData.map((category: string, index: number) => ({
+              id: index + 2,
+              title: category,
+              slug: category
+                .toLowerCase()
+                .replace(/ & /g, "-")
+                .replace(/ /g, "-"),
+            })),
+          ];
+          setCategories(categoriesFromApi);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleSelectCategory = (index: number) => {
     const selected = itemRef.current[index];
@@ -26,7 +62,7 @@ const Categories = ({ onCategoryChanged }: Props) => {
       scrollRef.current?.scrollTo({ x: pageX, y: 0, animated: true });
     });
 
-    onCategoryChanged(newsCategoryList[index].slug);
+    onCategoryChanged(categories[index].slug);
   };
 
   return (
@@ -36,8 +72,9 @@ const Categories = ({ onCategoryChanged }: Props) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.itemsWrapper}
+        ref={scrollRef}
       >
-        {newsCategoryList.map((item, index) => (
+        {categories.map((item, index) => (
           <View
             ref={(el) => {
               itemRef.current[index] = el;

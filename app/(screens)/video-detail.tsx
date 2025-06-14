@@ -7,7 +7,7 @@ import { Colors } from "@/constants/colors";
 import { useSegments } from "@/hooks/use-segments";
 import { useVideo } from "@/hooks/use-videos";
 import { Segment } from "@/types/segment";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -247,38 +247,29 @@ export default function VideoDetailScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeftBlock}>
-          <TouchableOpacity
-            style={styles.backBtnBlock}
-            onPress={() => router.back()}
-            accessibilityLabel="Back"
-          >
-            <Feather name="arrow-left" size={24} color={Colors.softText} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.headerCenterBlock}>
-          <Text style={styles.title} numberOfLines={2}>
-            {video ? video.title : "Loading..."}
-          </Text>
-          <Text style={styles.userName}>{MOCK_USER.name}</Text>
-        </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity
-            onPress={toggleFavorite}
-            accessibilityLabel={
-              isFavorite ? "Remove from favorites" : "Add to favorites"
-            }
-          >
-            <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={24}
-              color={isFavorite ? Colors.primary : Colors.softText}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={{ marginLeft: 12 }}>
-            <Feather name="share-2" size={22} color={Colors.softText} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.backBtnBlock}
+          onPress={() => router.back()}
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.black} />
+        </TouchableOpacity>
+        <Text style={styles.title} numberOfLines={1}>
+          {video ? video.title : "Loading..."}
+        </Text>
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={toggleFavorite}
+          accessibilityLabel={
+            isFavorite ? "Remove from favorites" : "Add to favorites"
+          }
+        >
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={24}
+            color={isFavorite ? Colors.primary : Colors.darkGrey}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Video Player */}
@@ -491,20 +482,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 8,
   },
-
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
+    backgroundColor: Colors.white,
+    elevation: 3,
   },
   title: {
-    flex: 1,
-    fontWeight: "700",
     fontSize: 16,
+    fontWeight: "600",
     color: Colors.black,
-    marginRight: 8,
+    flex: 1,
+    textAlign: "center",
+  },
+  favoriteButton: {
+    padding: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerIcons: { flexDirection: "row", alignItems: "center" },
   videoBox: {

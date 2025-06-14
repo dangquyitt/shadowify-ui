@@ -51,11 +51,12 @@ const VideoItem: React.FC<VideoItemProps> = ({
         <Text style={styles.itemTitle} numberOfLines={3}>
           {video.title}
         </Text>
-        <Text style={styles.channelName} numberOfLines={1}>
-          Channel Name
-        </Text>
         <Text style={styles.metaInfo} numberOfLines={1}>
-          1.2K views • {new Date(video.created_at).toLocaleDateString()}
+          {video.categories.slice(0, 3).join(", ")}
+          {video.categories.length > 3 && " ..."}
+        </Text>
+        <Text style={styles.createdAt} numberOfLines={1}>
+          {new Date(video.created_at).toLocaleDateString()}
         </Text>
       </View>
 
@@ -141,14 +142,14 @@ const styles = StyleSheet.create({
     color: Colors.black,
     lineHeight: 18,
   },
-  channelName: {
-    fontSize: 12,
-    color: Colors.softText,
-    fontWeight: "500",
-  },
   metaInfo: {
     fontSize: 11,
     color: Colors.darkGrey,
+  },
+  createdAt: {
+    fontSize: 11,
+    color: Colors.darkGrey,
+    marginTop: 2,
   },
   favoriteButton: {
     padding: 8,

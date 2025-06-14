@@ -14,6 +14,20 @@ const api = axios.create({
 
 export const videoApi = {
   /**
+   * Fetches categories from the server
+   * @returns Promise with an array of category strings
+   */
+  getCategories: async (): Promise<string[]> => {
+    try {
+      const response = await api.get<{ code: string, data: string[] }>('/videos/categories');
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Fetches video segments for a specific video
    * @param videoId - The ID of the video
    * @returns Promise with an array of Segment objects
@@ -62,9 +76,17 @@ export const videoApi = {
   },
 
   getPopularVideos: async (): Promise<Video[]> => {
-    // Always get 5 popular videos
-    const res = await videoApi.getVideos(1, 5, undefined, 'popular');
-    return res.videos;
+    try {
+      const response = await api.get<{ 
+        code: string,
+        data: Video[]
+      }>('/videos?page=1&page_size=5&type=popular');
+      
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to fetch popular videos:', error);
+      throw error;
+    }
   },
 
   /**
