@@ -237,6 +237,7 @@ export default function VideoDetailScreen() {
           transcript: segment.content,
           startSec: segment.start_sec,
           endSec: segment.end_sec,
+          cefr: segment.cefr, // Pass the CEFR level
         },
       });
     }
@@ -413,6 +414,7 @@ export default function VideoDetailScreen() {
                 onTranslate={handleTranslate}
                 segment={segment}
                 onMicPress={handleMicPress}
+                cefrColor={Colors[`cefr${segment.cefr}`] || Colors.primary} // Pass CEFR color
               />
             ))
           )}

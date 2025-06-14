@@ -28,6 +28,7 @@ export default function ShadowingPracticeScreen() {
   const transcript = params.transcript as string;
   const startSec = Number(params.startSec) || 0;
   const endSec = Number(params.endSec) || 0;
+  const cefr = params.cefr as string; // Add CEFR level from params
 
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
@@ -221,7 +222,11 @@ export default function ShadowingPracticeScreen() {
         <View style={styles.headerCenterBlock}>
           <Text style={styles.headerTitle}>Shadowing Practice</Text>
         </View>
-        <View style={{ width: 48 }} />
+        <View style={styles.headerRightBlock}>
+          <TouchableOpacity style={styles.savedButton}>
+            <Feather name="bookmark" size={24} color={Colors.black} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Video Player */}
@@ -264,9 +269,24 @@ export default function ShadowingPracticeScreen() {
         <View style={styles.transcriptContainer}>
           <View style={styles.transcriptHeader}>
             <Text style={styles.transcriptTitle}>Original Transcript</Text>
-            <TouchableOpacity style={styles.bookmarkButton}>
-              <Feather name="bookmark" size={20} color={Colors.black} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={[
+                  styles.cefrBadge,
+                  {
+                    backgroundColor: Colors.tint,
+                    paddingHorizontal: 4,
+                    paddingVertical: 2,
+                    fontSize: 14,
+                  },
+                ]}
+              >
+                {cefr}
+              </Text>
+              <TouchableOpacity style={styles.bookmarkButton}>
+                <Feather name="bookmark" size={20} color={Colors.black} />
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.transcriptBox}>
             {hasRecorded && textComparison ? (
@@ -396,6 +416,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: Colors.black,
+  },
+  headerRightBlock: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  savedButton: {
+    padding: 4,
   },
   videoContainer: {
     width: "100%",
@@ -527,6 +556,32 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: Colors.tint,
     borderRadius: 3,
+  },
+  inlineContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 10,
+  },
+  originalTranscript: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  rightContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  savedButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cefrBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    color: "white",
+    fontWeight: "bold",
+    marginRight: 10,
   },
 });
 

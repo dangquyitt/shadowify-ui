@@ -26,5 +26,11 @@ export const Colors = {
     text: '#333333',
     textSecondary: '#666666',
     textTertiary: '#999999',
+    // CEFR Level colors (từ thấp đến cao)
+    cefrA1: '#8BC34A', // Xanh lá nhạt - Beginner
+    cefrA2: '#4CAF50', // Xanh lá - Elementary
+    cefrB1: '#3F51B5', // Xanh dương - Intermediate
+    cefrB2: '#2196F3', // Xanh dương đậm - Upper Intermediate
+    cefrC1: '#FF9800', // Cam - Advanced
+    cefrC2: '#FF5722', // Cam đỏ - Mastery
   };
-  

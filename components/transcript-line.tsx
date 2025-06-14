@@ -15,6 +15,7 @@ type TranscriptLineProps = {
   onTranslate?: (segment: Segment) => void; // Update type to accept Segment
   segment?: Segment;
   onMicPress?: (segment: Segment) => void;
+  cefrColor?: string; // Add cefrColor for CEFR level color
 };
 
 const TranscriptLine = forwardRef<View, TranscriptLineProps>(
@@ -28,6 +29,7 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
       onTranslate,
       segment,
       onMicPress,
+      cefrColor, // Destructure cefrColor
     },
     ref
   ) => {
@@ -53,11 +55,23 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
         onPress={onPressLine}
         activeOpacity={0.7}
       >
-        {segment?.start_sec !== undefined && (
-          <View style={styles.segmentTimeContainer}>
-            <Text style={styles.segmentTimeText}>{startTime}</Text>
-          </View>
-        )}
+        <View style={styles.lineInfoContainer}>
+          {segment?.start_sec !== undefined && (
+            <View style={styles.segmentTimeContainer}>
+              <Text style={styles.segmentTimeText}>{startTime}</Text>
+            </View>
+          )}
+          {segment?.cefr && (
+            <View
+              style={[
+                styles.cefrBadge,
+                { backgroundColor: cefrColor || Colors.primary },
+              ]}
+            >
+              <Text style={styles.cefrText}>{segment.cefr}</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.transcriptText}>
           {words.map((word, idx) => (
             <Text
@@ -93,6 +107,7 @@ const TranscriptLine = forwardRef<View, TranscriptLineProps>(
                     transcript: text,
                     startSec: segment.start_sec,
                     endSec: segment.end_sec,
+                    cefr: segment.cefr, // Pass the CEFR level
                   },
                 });
               }
@@ -129,19 +144,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.tint,
   },
-  segmentTimeContainer: {
+  lineInfoContainer: {
+    flexDirection: "column",
+    alignItems: "center",
     marginRight: 8,
+  },
+  segmentTimeContainer: {
     backgroundColor: Colors.background,
     paddingVertical: 2,
     paddingHorizontal: 5,
     borderRadius: 4,
     minWidth: 40,
     alignItems: "center",
+    marginBottom: 4,
   },
   segmentTimeText: {
     fontSize: 12,
     color: Colors.softText,
     fontWeight: "500",
+  },
+  cefrBadge: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 4,
+    minWidth: 40,
+    alignItems: "center",
+  },
+  cefrText: {
+    fontSize: 10,
+    color: Colors.white,
+    fontWeight: "700",
   },
   transcriptText: { flex: 1, color: Colors.black, fontSize: 15 },
   wordText: {

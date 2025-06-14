@@ -76,6 +76,7 @@ export default function TranslateModal({
                         transcript: source,
                         startSec: segment.start_sec,
                         endSec: segment.end_sec,
+                        cefr: segment.cefr, // Pass the CEFR level
                       },
                     });
                   }
