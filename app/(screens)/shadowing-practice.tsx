@@ -223,9 +223,7 @@ export default function ShadowingPracticeScreen() {
           <Text style={styles.headerTitle}>Shadowing Practice</Text>
         </View>
         <View style={styles.headerRightBlock}>
-          <TouchableOpacity style={styles.savedButton}>
-            <Feather name="bookmark" size={24} color={Colors.black} />
-          </TouchableOpacity>
+          {/* Bookmark button removed */}
         </View>
       </View>
 
@@ -390,16 +388,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.background,
+    position: "relative",
   },
   headerLeftBlock: {
     width: 48,
     justifyContent: "center",
     alignItems: "flex-start",
+    zIndex: 1,
   },
   backBtnBlock: {
     padding: 8,
@@ -408,7 +407,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   headerCenterBlock: {
-    flex: 1,
+    position: "absolute",
+    left: 0,
+    right: 0,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -416,12 +417,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: Colors.black,
+    textAlign: "center",
   },
   headerRightBlock: {
+    width: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 8,
+    marginLeft: "auto",
+    zIndex: 1,
   },
   savedButton: {
     padding: 4,
