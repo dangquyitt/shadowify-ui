@@ -12,9 +12,9 @@ const TabLayout = () => {
           backgroundColor: Colors.white,
           borderTopWidth: 1,
           borderTopColor: Colors.background,
-          height: 60,
-          paddingTop: 8,
-          paddingBottom: 8,
+          height: 50, // Adjusted height to fix tab bar issue
+          paddingTop: 0, // Removed extra padding
+          paddingBottom: 0, // Removed extra padding
         },
       }}
       tabBar={(props) => <TabBar {...props} />}

@@ -14,6 +14,27 @@ const api = axios.create({
 
 export const videoApi = {
   /**
+   * Creates a new video from YouTube URL
+   * @param youtubeRawInput - The YouTube video URL
+   * @returns Promise with the ID of the created video or throws an error
+   */
+  createVideo: async (youtubeRawInput: string): Promise<string> => {
+    try {
+      const response = await api.post('/videos', { youtubeRawInput });
+      if (response.data.code === 'success') {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.errors[0]?.message || 'Unknown error');
+      }
+    } catch (error: any) {
+      if (error.response?.data?.errors?.[0]?.message) {
+        throw new Error(error.response.data.errors[0].message);
+      }
+      throw error;
+    }
+  },
+  
+  /**
    * Fetches categories from the server
    * @returns Promise with an array of category strings
    */

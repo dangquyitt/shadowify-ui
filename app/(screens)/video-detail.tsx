@@ -254,7 +254,7 @@ export default function VideoDetailScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={Colors.black} />
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={styles.title} numberOfLines={2}>
           {video ? video.title : "Loading..."}
         </Text>
         <TouchableOpacity
@@ -492,11 +492,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.black,
     flex: 1,
     textAlign: "center",
+    lineHeight: 18, // Reduced line height for better readability
+    maxHeight: 38, // Limit height to two lines
   },
   favoriteButton: {
     padding: 8,

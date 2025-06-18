@@ -74,9 +74,6 @@ const Favorites = (props: Props) => {
   return (
     <SafeAreaView style={styles.container}>
       <Header />
-
-      <Text style={styles.header}>Favorites</Text>
-
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
@@ -116,14 +113,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.black,
-    marginTop: 16,
-    marginBottom: 4,
-    marginLeft: 18,
   },
   listContent: {
     flexGrow: 1,
