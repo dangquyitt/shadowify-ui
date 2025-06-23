@@ -1,16 +1,33 @@
 import { DictionaryResponse } from '@/types/dictionary';
 import { Segment } from '@/types/segment';
 import { Video, VideoDetails } from '@/types/video';
+import { getDeviceId } from '@/utils/device-id';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080'; // Use host machine IP for iOS simulator
 
+// Create axios instance with initial configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Add request interceptor to attach device ID to each request
+api.interceptors.request.use(
+  async (config) => {
+    // Get the device ID and add it to the request headers
+    const deviceId = await getDeviceId();
+    if (deviceId) {
+      config.headers['X-Device-ID'] = deviceId;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const videoApi = {
   /**

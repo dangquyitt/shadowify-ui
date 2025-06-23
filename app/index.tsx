@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/colors";
+import { getDeviceId } from "@/utils/device-id";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -12,6 +13,20 @@ import Animated, { FadeInRight } from "react-native-reanimated";
 
 const Page = () => {
   const router = useRouter();
+
+  // Initialize device ID when app starts
+  useEffect(() => {
+    const initDeviceId = async () => {
+      try {
+        const deviceId = await getDeviceId();
+        console.log("Device identified:", deviceId);
+      } catch (error) {
+        console.error("Error initializing device ID:", error);
+      }
+    };
+
+    initDeviceId();
+  }, []);
 
   return (
     <View style={styles.container}>
