@@ -3,8 +3,8 @@ import VideoItem from "@/components/video-item";
 import { Colors } from "@/constants/colors";
 import useFavorites from "@/hooks/use-favorites";
 import { Feather } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback } from "react";
+import { router } from "expo-router";
+import React from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -57,21 +57,6 @@ const Favorites = (props: Props) => {
     search,
     setSearch,
   } = useFavorites();
-
-  // Refresh favorites list every time this tab gets focus, with a small delay
-  useFocusEffect(
-    useCallback(() => {
-      // Use a small delay to prevent UI jank when switching tabs
-      const timer = setTimeout(() => {
-        refresh();
-      }, 100);
-
-      // Return a cleanup function to clear the timeout if we navigate away quickly
-      return () => {
-        clearTimeout(timer);
-      };
-    }, [refresh])
-  );
 
   const handleVideoPress = (videoId: string) => {
     router.push({
