@@ -138,12 +138,14 @@ function WordItem({
 }) {
   return (
     <TouchableOpacity style={styles.wordItem} onPress={onPress}>
-      <Text style={styles.word} numberOfLines={1}>
-        {meaning_en}
-      </Text>
-      <Text style={styles.meaning} numberOfLines={2}>
-        {meaning_vi}
-      </Text>
+      <View style={styles.wordRow}>
+        <Text style={styles.word} numberOfLines={1}>
+          {meaning_en}
+        </Text>
+        <Text style={styles.meaning} numberOfLines={1}>
+          {meaning_vi}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -696,22 +698,26 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 10,
     padding: 14,
+    paddingVertical: 16,
     flexDirection: "column",
     alignItems: "flex-start",
-    minHeight: 70, // Ensure consistent height for better swipe experience
+    minHeight: 55, // Adjust height to match screenshot
+  },
+  wordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    width: "100%",
   },
   word: {
     fontSize: 16,
-    color: Colors.tint,
+    color: Colors.tint, // Red color shown in screenshot
     fontWeight: "600",
-    marginBottom: 6,
-    flexShrink: 1,
+    marginRight: 10,
   },
   meaning: {
-    fontSize: 15,
+    fontSize: 16,
     color: Colors.softText,
-    flexShrink: 1,
-    flexWrap: "wrap",
   },
   emptyText: {
     textAlign: "center",

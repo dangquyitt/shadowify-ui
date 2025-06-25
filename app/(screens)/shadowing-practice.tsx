@@ -48,6 +48,7 @@ export default function ShadowingPracticeScreen() {
   const [isSaved, setIsSaved] = useState(false); // Track if this segment is saved
   const [isLoading, setIsLoading] = useState(true); // Loading state for API calls
   const [isLoadingSegment, setIsLoadingSegment] = useState(false); // Loading state for segment data
+  const [savingBookmark, setSavingBookmark] = useState(false); // Thêm state để theo dõi trạng thái đang lưu bookmark
 
   const bookmarkScaleAnim = useRef(new Animated.Value(1)).current; // Animation value for bookmark button
 
@@ -121,7 +122,7 @@ export default function ShadowingPracticeScreen() {
 
   // Function to toggle save/unsave status
   const toggleSaveStatus = async () => {
-    if (!segmentId || isLoading) return;
+    if (!segmentId || savingBookmark) return;
 
     // Start animation
     Animated.sequence([
@@ -138,7 +139,7 @@ export default function ShadowingPracticeScreen() {
     ]).start();
 
     try {
-      setIsLoading(true);
+      setSavingBookmark(true);
 
       if (isSaved) {
         // Delete sentence if already saved
@@ -152,11 +153,22 @@ export default function ShadowingPracticeScreen() {
         await sentencesApi.createSentence(segmentId, transcript);
         setIsSaved(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to toggle save status:", error);
-      Alert.alert("Error", "Failed to save or remove sentence");
+      // Hiển thị lỗi chi tiết để debug
+      const errorMessage =
+        error?.response?.data?.errors?.[0]?.message ||
+        error?.message ||
+        "Unknown error occurred";
+
+      Alert.alert(
+        "Error",
+        isSaved
+          ? `Failed to remove from saved items: ${errorMessage}`
+          : `Failed to save item: ${errorMessage}`
+      );
     } finally {
-      setIsLoading(false);
+      setSavingBookmark(false);
     }
   };
 
@@ -408,18 +420,21 @@ export default function ShadowingPracticeScreen() {
               <TouchableOpacity
                 style={styles.bookmarkButton}
                 onPress={toggleSaveStatus}
-                disabled={isLoading}
+                disabled={savingBookmark}
                 activeOpacity={0.7}
               >
                 <Animated.View
                   style={{ transform: [{ scale: bookmarkScaleAnim }] }}
                 >
-                  <MaterialIcons
-                    name={isSaved ? "bookmark" : "bookmark-border"}
-                    size={24}
-                    color={isSaved ? Colors.tint : "#AAAAAA"}
-                    style={{ opacity: isLoading ? 0.5 : 1 }}
-                  />
+                  {savingBookmark ? (
+                    <ActivityIndicator size="small" color={Colors.tint} />
+                  ) : (
+                    <MaterialIcons
+                      name={isSaved ? "bookmark" : "bookmark-outline"}
+                      size={24}
+                      color={isSaved ? Colors.tint : Colors.darkGrey}
+                    />
+                  )}
                 </Animated.View>
               </TouchableOpacity>
             </View>
@@ -592,11 +607,11 @@ const styles = StyleSheet.create({
     color: Colors.black,
   },
   bookmarkButton: {
-    padding: 6,
-    marginLeft: 8,
-    borderRadius: 20,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 20,
   },
   transcriptBox: {
     backgroundColor: Colors.background,
