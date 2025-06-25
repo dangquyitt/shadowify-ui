@@ -140,6 +140,140 @@ export const videoApi = {
       throw error;
     }
   },
+
+  /**
+   * Fetches a list of words from the server with pagination and search support
+   * @param page - The page number to fetch
+   * @param pageSize - Number of items per page
+   * @param q - Search query
+   * @returns Promise with an array of word objects and hasMore flag
+   */
+  getWords: async (page: number = 1, pageSize: number = 10, q?: string): Promise<{
+    words: { 
+      id: string; 
+      created_at: string;
+      updated_at: string;
+      meaning_vi: string;
+      meaning_en: string;
+      user_id: string;
+      segment_id: string;
+    }[], 
+    hasMore: boolean
+  }> => {
+    try {
+      const query = [`page=${page}`, `page_size=${pageSize}`];
+      if (q && q.length > 0) query.push(`q=${encodeURIComponent(q)}`);
+      const url = `/words?${query.join("&")}`;
+      const response = await api.get<{
+        code: string,
+        data: { 
+          id: string; 
+          created_at: string;
+          updated_at: string;
+          meaning_vi: string;
+          meaning_en: string;
+          user_id: string;
+          segment_id: string;
+        }[],
+        pagination: {
+          page: number,
+          page_size: number,
+          total: number
+        }
+      }>(url);
+      const totalPages = Math.ceil(response.data.pagination.total / response.data.pagination.page_size);
+      const hasMore = response.data.pagination.page < totalPages;
+      return {
+        words: response.data.data,
+        hasMore
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Checks if a word exists in the user's personal dictionary
+   * @param word - The English word to check
+   * @returns Promise with the word details if it exists
+   */
+  getWordDetails: async (word: string): Promise<{
+    id: string; 
+    created_at: string;
+    updated_at: string;
+    meaning_vi: string;
+    meaning_en: string;
+    user_id: string;
+    segment_id: string;
+  } | null> => {
+    try {
+      const response = await api.get<{
+        code: string,
+        data: { 
+          id: string; 
+          created_at: string;
+          updated_at: string;
+          meaning_vi: string;
+          meaning_en: string;
+          user_id: string;
+          segment_id: string;
+        }
+      }>(`/words/${encodeURIComponent(word)}`);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 400)) {
+        return null; // Word not found or not in database
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Creates a new word 
+   * @param meaningEn - The English meaning of the word
+   * @param meaningVi - Optional Vietnamese meaning of the word
+   * @returns Promise with the created word's ID
+   */
+  createWord: async (meaningEn: string, meaningVi?: string): Promise<string> => {
+    try {
+      const payload: { meaning_en: string; meaning_vi?: string } = { 
+        meaning_en: meaningEn 
+      };
+      
+      if (meaningVi) {
+        payload.meaning_vi = meaningVi;
+      }
+      
+      const response = await api.post<{
+        code: string,
+        data: string
+      }>('/words', payload);
+      
+      if (response.data.code === 'success') {
+        return response.data.data;
+      } else {
+        throw new Error('Failed to create word');
+      }
+    } catch (error) {
+      console.error('Failed to create word:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a word from the user's personal dictionary
+   * @param word - The English word to delete
+   * @returns Promise indicating success or failure
+   */
+  deleteWord: async (word: string): Promise<boolean> => {
+    try {
+      const response = await api.delete<{code: string}>(`/words/${encodeURIComponent(word)}`);
+      return response.data.code === 'success';
+    } catch (error) {
+      console.error('Failed to delete word:', error);
+      throw error;
+    }
+  },
 };
 
 export const speechApi = {

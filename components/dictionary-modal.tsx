@@ -1,11 +1,12 @@
 import { Colors } from "@/constants/colors";
-import { dictionaryApi } from "@/services/api";
+import { dictionaryApi, videoApi } from "@/services/api";
 import { DictionaryEntry } from "@/types/dictionary";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -27,6 +28,8 @@ export default function DictionaryModal({
   const [error, setError] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [savingWord, setSavingWord] = useState<boolean>(false);
 
   // Use a ref to track if component is mounted
   const isMounted = useRef(true); // Function to play pronunciation audio
@@ -189,6 +192,66 @@ export default function DictionaryModal({
     };
   }, [sound]);
 
+  // Handle toggling saved status
+  const toggleSavedStatus = async () => {
+    if (!word) return;
+
+    try {
+      setSavingWord(true);
+
+      if (isSaved) {
+        // Remove word from personal dictionary
+        await videoApi.deleteWord(word);
+        setIsSaved(false);
+      } else {
+        // Add word to personal dictionary
+        const vietnameseMeaning = dictionaryData
+          ? // Create a simple Vietnamese meaning from first definition if available
+            dictionaryData.meanings.length > 0 &&
+            dictionaryData.meanings[0].definitions.length > 0
+            ? dictionaryData.meanings[0].definitions[0].definition
+            : undefined
+          : undefined;
+
+        await videoApi.createWord(word, vietnameseMeaning);
+        setIsSaved(true);
+      }
+    } catch (error: any) {
+      console.error("Error toggling save status:", error);
+      // Hiển thị lỗi chi tiết hơn để debug
+      const errorMessage =
+        error?.response?.data?.errors?.[0]?.message ||
+        error?.message ||
+        "Unknown error occurred";
+
+      Alert.alert(
+        "Error",
+        isSaved
+          ? `Failed to remove from your dictionary: ${errorMessage}`
+          : `Failed to save to your dictionary: ${errorMessage}`
+      );
+    } finally {
+      setSavingWord(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkIfWordIsSaved = async () => {
+      if (!word) return;
+
+      try {
+        const wordDetails = await videoApi.getWordDetails(word);
+        setIsSaved(!!wordDetails);
+      } catch (error) {
+        // Lỗi 400 và 404 đều có nghĩa là từ chưa tồn tại trong từ điển cá nhân
+        console.error("Error checking if word is saved:", error);
+        setIsSaved(false);
+      }
+    };
+
+    checkIfWordIsSaved();
+  }, [word]);
+
   useEffect(() => {
     const fetchDefinition = async () => {
       try {
@@ -257,6 +320,21 @@ export default function DictionaryModal({
       >
         <View style={styles.wordHeader}>
           <Text style={styles.dictWord}>{dictionaryData.word}</Text>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={toggleSavedStatus}
+            disabled={savingWord}
+          >
+            {savingWord ? (
+              <ActivityIndicator size="small" color={Colors.tint} />
+            ) : (
+              <MaterialIcons
+                name={isSaved ? "bookmark" : "bookmark-outline"}
+                size={24}
+                color={isSaved ? Colors.tint : Colors.darkGrey}
+              />
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Pronunciation Section */}
@@ -487,6 +565,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.tint,
     marginBottom: 4,
+    flex: 1,
   },
   wordHeader: {
     flexDirection: "row",
@@ -494,6 +573,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
     width: "100%",
+  },
+  saveButton: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
   },
   // Pronunciation section styles
   pronunciationSection: {
@@ -542,6 +628,17 @@ const styles = StyleSheet.create({
   },
   pronunciationAudioButton: {
     backgroundColor: Colors.white,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.tint,
+  },
+  meaningContainer: {
+    marginBottom: 16,
+    width: "100%",
     borderRadius: 16,
     width: 32,
     height: 32,
@@ -667,5 +764,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.white,
     fontWeight: "600",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.red,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    width: "100%",
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    color: Colors.white,
+    fontWeight: "500",
+    marginLeft: 8,
   },
 });
