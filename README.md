@@ -2,6 +2,59 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+<div align="center">
+  <img src="./assets/images/icon.png" width="120" alt="Shadowify Logo" />
+  <h1>Shadowify UI</h1>
+  <p>A modern language learning app that helps improve speaking skills through video shadowing practice</p>
+</div>
+
+## Features
+
+- 📱 **Modern UI**: Beautiful and intuitive React Native interface
+- 🎥 **Video Shadowing**: Practice speaking along with videos to improve pronunciation
+- 🎯 **Transcript Highlighting**: Follow along with highlighted transcript as you watch
+- 🔍 **Dictionary Integration**: Look up definitions with just a tap
+- ⏱️ **Speed Control**: Adjust video speed for better learning
+- 🎙️ **Recording**: Record your own voice for comparison
+- 💾 **Save & Favorite**: Save videos and mark favorites for later practice
+- 🌐 **YouTube Integration**: Practice with videos from YouTube
+
+## App Screenshots
+
+Here are some screenshots of the Shadowify UI app:
+
+<p align="center">
+  <img src="./images/01.png" width="250" alt="Screenshot 1" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/02.png" width="250" alt="Screenshot 2" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/03.png" width="250" alt="Screenshot 3" />
+</p>
+
+<p align="center">
+  <img src="./images/04.png" width="250" alt="Screenshot 4" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/05.png" width="250" alt="Screenshot 5" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/06.png" width="250" alt="Screenshot 6" />
+</p>
+
+<p align="center">
+  <img src="./images/07.png" width="250" alt="Screenshot 7" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/08.png" width="250" alt="Screenshot 8" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/09.png" width="250" alt="Screenshot 9" />
+</p>
+
+<p align="center">
+  <img src="./images/10.png" width="250" alt="Screenshot 10" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/11.png" width="250" alt="Screenshot 11" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="./images/12.png" width="250" alt="Screenshot 12" />
+</p>
+
 ## Get started
 
 1. Install dependencies
