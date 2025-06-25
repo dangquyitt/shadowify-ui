@@ -80,8 +80,7 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 8,

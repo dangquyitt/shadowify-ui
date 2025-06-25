@@ -388,10 +388,16 @@ export const favoritesApi = {
    * Fetches user's favorite videos with pagination support
    * @param page - The page number to fetch
    * @param pageSize - Number of items per page
+   * @param q - Optional search query
    * @returns Promise with an array of Video objects and pagination info
    */
-  getFavorites: async (page: number = 1, pageSize: number = 10): Promise<{videos: Video[], hasMore: boolean}> => {
+  getFavorites: async (page: number = 1, pageSize: number = 10, q?: string): Promise<{videos: Video[], hasMore: boolean}> => {
     try {
+      // Add query param 'q' if provided
+      const query = [`page=${page}`, `page_size=${pageSize}`];
+      if (q && q.length > 0) query.push(`q=${encodeURIComponent(q)}`);
+      const url = `/videos/favorites?${query.join("&")}`;
+      
       const response = await api.get<{ 
         code: string,
         data: Video[], 
@@ -400,7 +406,7 @@ export const favoritesApi = {
           page_size: number, 
           total: number 
         } 
-      }>(`/videos/favorites?page=${page}&page_size=${pageSize}`);
+      }>(url);
       
       // Calculate if there are more pages based on total items and current page
       const totalPages = Math.ceil(response.data.pagination.total / response.data.pagination.page_size);
