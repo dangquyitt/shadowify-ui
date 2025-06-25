@@ -142,6 +142,42 @@ export const videoApi = {
   },
 
   /**
+   * Fetches a segment by its ID
+   * @param segmentId - The ID of the segment to fetch
+   * @returns Promise with segment data
+   */
+  getSegmentById: async (segmentId: string): Promise<{ 
+    id: string; 
+    created_at: string;
+    updated_at: string;
+    video_id: string;
+    start_sec: number; 
+    end_sec: number; 
+    content: string;
+    cefr: string;
+  }> => {
+    try {
+      const response = await api.get<{
+        code: string,
+        data: { 
+          id: string; 
+          created_at: string;
+          updated_at: string;
+          video_id: string;
+          start_sec: number; 
+          end_sec: number; 
+          content: string;
+          cefr: string;
+        }
+      }>(`/segments/${segmentId}`);
+      
+      return response.data.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Fetches a list of words from the server with pagination and search support
    * @param page - The page number to fetch
    * @param pageSize - Number of items per page
@@ -407,6 +443,165 @@ export const favoritesApi = {
       throw error;
     }
   }
+};
+
+export const sentencesApi = {
+  /**
+   * Creates a new sentence associated with a segment
+   * @param segmentId - The ID of the segment the sentence is related to
+   * @param meaningEn - The English meaning of the sentence
+   * @param meaningVi - Optional Vietnamese meaning of the sentence
+   * @returns Promise with the created sentence's ID
+   */
+  createSentence: async (segmentId: string, meaningEn: string, meaningVi?: string): Promise<string> => {
+    try {
+      const payload: { 
+        segment_id: string; 
+        meaning_en: string; 
+        meaning_vi?: string 
+      } = {
+        segment_id: segmentId,
+        meaning_en: meaningEn
+      };
+      
+      if (meaningVi) {
+        payload.meaning_vi = meaningVi;
+      }
+      
+      const response = await api.post<{
+        code: string,
+        data: string
+      }>('/sentences', payload);
+      
+      if (response.data.code === 'success') {
+        return response.data.data;
+      } else {
+        throw new Error('Failed to create sentence');
+      }
+    } catch (error) {
+      console.error('Failed to create sentence:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches a list of sentences from the server with pagination and search support
+   * @param page - The page number to fetch
+   * @param pageSize - Number of items per page
+   * @param q - Search query
+   * @returns Promise with an array of sentence objects and hasMore flag
+   */
+  getSentences: async (page: number = 1, pageSize: number = 10, q?: string): Promise<{
+    sentences: { 
+      id: string; 
+      created_at: string;
+      updated_at: string;
+      meaning_en: string;
+      meaning_vi: string;
+      user_id: string;
+      segment_id: string;
+    }[], 
+    hasMore: boolean
+  }> => {
+    try {
+      const query = [`page=${page}`, `page_size=${pageSize}`];
+      if (q && q.length > 0) query.push(`q=${encodeURIComponent(q)}`);
+      const url = `/sentences?${query.join("&")}`;
+      const response = await api.get<{
+        code: string,
+        data: { 
+          id: string; 
+          created_at: string;
+          updated_at: string;
+          meaning_en: string;
+          meaning_vi: string;
+          user_id: string;
+          segment_id: string;
+        }[],
+        pagination: {
+          page: number,
+          page_size: number,
+          total: number
+        }
+      }>(url);
+      const totalPages = Math.ceil(response.data.pagination.total / response.data.pagination.page_size);
+      const hasMore = response.data.pagination.page < totalPages;
+      return {
+        sentences: response.data.data,
+        hasMore
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches sentence by segment ID
+   * @param segmentId - The ID of the segment to get sentence for
+   * @returns Promise with a sentence object or null if not found
+   */
+  getSentencesBySegmentId: async (segmentId: string): Promise<{
+    id: string; 
+    created_at: string;
+    updated_at: string;
+    meaning_en: string;
+    meaning_vi: string;
+    user_id: string;
+    segment_id: string;
+  } | null> => {
+    try {
+      const response = await api.get<{
+        code: string,
+        data: { 
+          id: string; 
+          created_at: string;
+          updated_at: string;
+          meaning_en: string;
+          meaning_vi: string;
+          user_id: string;
+          segment_id: string;
+        }
+      }>(`/sentences/segments/${segmentId}`);
+      
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 400)) {
+        return null; // Sentence not found or not in database
+      }
+      console.error('Failed to fetch sentence by segment ID:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes sentences by segment ID
+   * @param segmentId - The ID of the segment to delete sentences for
+   * @returns Promise indicating success or failure
+   */
+  deleteSentencesBySegmentId: async (segmentId: string): Promise<boolean> => {
+    try {
+      const response = await api.delete<{code: string}>(`/sentences/segments/${segmentId}`);
+      return response.data.code === 'success';
+    } catch (error) {
+      console.error('Failed to delete sentences by segment ID:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a sentence by its ID
+   * @param id - The ID of the sentence to delete
+   * @returns Promise with success boolean
+   */
+  deleteSentence: async (id: string): Promise<boolean> => {
+    try {
+      const response = await api.delete(`/sentences/${id}`);
+      return response.status === 200;
+    } catch (error) {
+      console.error('Error deleting sentence:', error);
+      return false;
+    }
+  },
 };
 
 export default api;

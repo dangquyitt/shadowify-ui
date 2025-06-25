@@ -1,13 +1,16 @@
 import DictionaryModal from "@/components/dictionary-modal";
 import { MarkedText } from "@/components/marked-text";
 import { ShadowingRecorder } from "@/components/shadowing-recorder";
+import { sentencesApi, videoApi } from "@/services/api";
 import { compareTexts, TextComparisonResult } from "@/utils/text-comparison";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useAudioPlayer } from "expo-audio";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   SafeAreaView,
   ScrollView,
@@ -29,6 +32,7 @@ export default function ShadowingPracticeScreen() {
   const startSec = Number(params.startSec) || 0;
   const endSec = Number(params.endSec) || 0;
   const cefr = params.cefr as string; // Add CEFR level from params
+  const segmentId = params.segmentId as string; // Get segmentId from params
 
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
@@ -41,6 +45,11 @@ export default function ShadowingPracticeScreen() {
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false); // Track if this segment is saved
+  const [isLoading, setIsLoading] = useState(true); // Loading state for API calls
+  const [isLoadingSegment, setIsLoadingSegment] = useState(false); // Loading state for segment data
+
+  const bookmarkScaleAnim = useRef(new Animated.Value(1)).current; // Animation value for bookmark button
 
   const playerRef = useRef(null);
   const audioPlayer = useAudioPlayer();
@@ -52,6 +61,104 @@ export default function ShadowingPracticeScreen() {
       setIsPaused(true);
     }
   }, [isRecording, isPlayerReady]);
+
+  // Check if the segment is already saved when component mounts
+  useEffect(() => {
+    const checkSavedStatus = async () => {
+      if (segmentId) {
+        try {
+          setIsLoading(true);
+          const sentence =
+            await sentencesApi.getSentencesBySegmentId(segmentId);
+          setIsSaved(sentence !== null);
+        } catch (error) {
+          console.error("Failed to fetch sentence status:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkSavedStatus();
+  }, [segmentId]);
+
+  // Fetch segment data if only segmentId is provided
+  useEffect(() => {
+    const fetchSegmentData = async () => {
+      if (segmentId && (!youtubeId || !transcript)) {
+        try {
+          setIsLoadingSegment(true);
+          const segmentData = await videoApi.getSegmentById(segmentId);
+
+          // Get video details to fetch YouTube ID
+          const videoDetails = await videoApi.getVideoById(
+            segmentData.video_id
+          );
+
+          // Update URL params with segment data
+          router.setParams({
+            youtubeId: videoDetails.youtube_id,
+            transcript: segmentData.content,
+            startSec: segmentData.start_sec.toString(),
+            endSec: segmentData.end_sec.toString(),
+            cefr: segmentData.cefr || "",
+            segmentId, // Keep the segmentId
+          });
+        } catch (error) {
+          console.error("Failed to fetch segment data:", error);
+          Alert.alert(
+            "Error",
+            "Failed to load segment data. Please try again."
+          );
+        } finally {
+          setIsLoadingSegment(false);
+        }
+      }
+    };
+
+    fetchSegmentData();
+  }, [segmentId, youtubeId, transcript]);
+
+  // Function to toggle save/unsave status
+  const toggleSaveStatus = async () => {
+    if (!segmentId || isLoading) return;
+
+    // Start animation
+    Animated.sequence([
+      Animated.timing(bookmarkScaleAnim, {
+        toValue: 1.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bookmarkScaleAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    try {
+      setIsLoading(true);
+
+      if (isSaved) {
+        // Delete sentence if already saved
+        const success =
+          await sentencesApi.deleteSentencesBySegmentId(segmentId);
+        if (success) {
+          setIsSaved(false);
+        }
+      } else {
+        // Save sentence if not already saved
+        await sentencesApi.createSentence(segmentId, transcript);
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error("Failed to toggle save status:", error);
+      Alert.alert("Error", "Failed to save or remove sentence");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle video state changes to ensure proper looping from start point
   const handleStateChange = (state: string) => {
@@ -206,6 +313,23 @@ export default function ShadowingPracticeScreen() {
     setSelectedWord(null);
   };
 
+  // Show loading indicator while fetching segment data
+  if (isLoadingSegment) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color={Colors.tint} />
+        <Text style={{ marginTop: 20, color: Colors.black }}>
+          Loading segment data...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -281,8 +405,22 @@ export default function ShadowingPracticeScreen() {
               >
                 {cefr}
               </Text>
-              <TouchableOpacity style={styles.bookmarkButton}>
-                <Feather name="bookmark" size={20} color={Colors.black} />
+              <TouchableOpacity
+                style={styles.bookmarkButton}
+                onPress={toggleSaveStatus}
+                disabled={isLoading}
+                activeOpacity={0.7}
+              >
+                <Animated.View
+                  style={{ transform: [{ scale: bookmarkScaleAnim }] }}
+                >
+                  <MaterialIcons
+                    name={isSaved ? "bookmark" : "bookmark-border"}
+                    size={24}
+                    color={isSaved ? Colors.tint : "#AAAAAA"}
+                    style={{ opacity: isLoading ? 0.5 : 1 }}
+                  />
+                </Animated.View>
               </TouchableOpacity>
             </View>
           </View>
@@ -454,7 +592,11 @@ const styles = StyleSheet.create({
     color: Colors.black,
   },
   bookmarkButton: {
-    padding: 4,
+    padding: 6,
+    marginLeft: 8,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   transcriptBox: {
     backgroundColor: Colors.background,

@@ -238,6 +238,7 @@ export default function VideoDetailScreen() {
           startSec: segment.start_sec,
           endSec: segment.end_sec,
           cefr: segment.cefr, // Pass the CEFR level
+          segmentId: segment.id, // Pass segment ID for saving functionality
         },
       });
     }
