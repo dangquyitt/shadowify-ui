@@ -1,8 +1,8 @@
+import { ActionMenuModal } from "@/components/action-menu-modal";
 import Categories from "@/components/categories";
 import { Header } from "@/components/header";
 import PopularVideos from "@/components/popular-videos";
 import SearchBar from "@/components/search-bar";
-import { YouTubeURLModal } from "@/components/youtube-url-modal";
 import { Colors } from "@/constants/colors";
 import { useVideos } from "@/hooks/use-videos";
 import { Ionicons } from "@expo/vector-icons";
@@ -96,7 +96,7 @@ const Page = (props: Props) => {
         <Ionicons name="add" size={22} color={Colors.white} />
       </TouchableOpacity>
 
-      <YouTubeURLModal
+      <ActionMenuModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
       />

@@ -610,4 +610,45 @@ export const sentencesApi = {
   },
 };
 
+export const sttApi = {
+  /**
+   * Evaluate speech and get CEFR level with meanings
+   * @param audioBase64 - Base64 encoded audio data
+   * @returns Promise with STT evaluation result
+   */
+  evaluate: async (audioBase64: string): Promise<{
+    cefr: string;
+    meaning_en: string;
+    meaning_vi: string;
+  }> => {
+    try {
+      console.log('🎯 STT API - Sending request with base64 length:', audioBase64.length);
+      console.log('🎯 STT API - Base64 preview:', audioBase64.substring(0, 100) + '...');
+      
+      const payload = {
+        audio_base64: audioBase64,
+      };
+      
+      console.log('🎯 STT API - Payload:', JSON.stringify(payload).substring(0, 200) + '...');
+      
+      const response = await api.post('/stt/evaluate', payload);
+      
+      console.log('🎯 STT API - Response:', response.data);
+      
+      if (response.data.code === 'success') {
+        return response.data.data;
+      } else {
+        console.error('🎯 STT API - Error response:', response.data);
+        throw new Error(response.data.errors[0]?.message || 'STT evaluation failed');
+      }
+    } catch (error: any) {
+      console.error('🎯 STT API - Exception:', error);
+      if (error.response?.data?.errors?.[0]?.message) {
+        throw new Error(error.response.data.errors[0].message);
+      }
+      throw error;
+    }
+  },
+};
+
 export default api;

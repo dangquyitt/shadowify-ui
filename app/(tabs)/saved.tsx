@@ -2,7 +2,7 @@ import DictionaryModal from "@/components/dictionary-modal";
 import { Header } from "@/components/header";
 import { Colors } from "@/constants/colors";
 import { sentencesApi, videoApi } from "@/services/api";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -306,6 +306,9 @@ const Saved = () => {
     useState(false);
   const [selectedWord, setSelectedWord] = useState("");
 
+  // Add state for flashcard modal
+  const [isFlashcardModalVisible, setIsFlashcardModalVisible] = useState(false);
+
   // Handle word item press
   const handleWordPress = (word: Word) => {
     setSelectedWord(word.meaning_en);
@@ -315,6 +318,33 @@ const Saved = () => {
   // Handle dictionary modal close
   const handleDictionaryModalClose = () => {
     setIsDictionaryModalVisible(false);
+  };
+
+  // Handle flashcard modal open/close
+  const handleFlashcardOpen = () => {
+    setIsFlashcardModalVisible(true);
+  };
+
+  const handleFlashcardClose = () => {
+    setIsFlashcardModalVisible(false);
+  };
+
+  // Handle sentence item press - navigate to shadowing practice
+  const handleSentencePress = (sentence: Sentence) => {
+    if (!sentence.segment_id) {
+      Alert.alert("Error", "No segment ID available for this sentence");
+      return;
+    }
+
+    // Navigate to shadowing practice with segment ID
+    router.push({
+      pathname: "/(screens)/shadowing-practice",
+      params: {
+        segmentId: sentence.segment_id,
+        // We don't have transcript, youtubeId, etc. directly here.
+        // These would normally be fetched on the shadowing-practice screen using the segmentId
+      },
+    });
   };
 
   // Handle deleting a word
@@ -383,24 +413,6 @@ const Saved = () => {
       ]
     );
   }, []);
-
-  // Handle sentence item press - navigate to shadowing practice
-  const handleSentencePress = (sentence: Sentence) => {
-    if (!sentence.segment_id) {
-      Alert.alert("Error", "No segment ID available for this sentence");
-      return;
-    }
-
-    // Navigate to shadowing practice with segment ID
-    router.push({
-      pathname: "/(screens)/shadowing-practice",
-      params: {
-        segmentId: sentence.segment_id,
-        // We don't have transcript, youtubeId, etc. directly here.
-        // These would normally be fetched on the shadowing-practice screen using the segmentId
-      },
-    });
-  };
 
   const fetchSentences = useCallback(
     async (reset = false) => {
@@ -494,12 +506,14 @@ const Saved = () => {
     <SafeAreaView style={styles.container}>
       <Header />
 
-      <TabSwitch tab={tab} onTabChange={setTab} />
+      <View style={styles.actionButtons}>
+        <TabSwitch tab={tab} onTabChange={setTab} />
+      </View>
       <SearchBar value={search} onChange={setSearch} />
       {tab === SENTENCES_TAB ? (
         <FlatList
           data={sentences}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`} // Ensure unique keys
           renderItem={({ item }) => (
             <SwipeableSentenceItem
               item={item}
@@ -538,7 +552,7 @@ const Saved = () => {
       ) : (
         <FlatList
           data={words}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`} // Ensure unique keys
           renderItem={({ item }) => (
             <SwipeableWordItem
               item={item}
@@ -605,6 +619,17 @@ const Saved = () => {
           onClose={handleDictionaryModalClose}
         />
       )}
+
+      {/* Floating Flashcard Button */}
+      {tab === WORDS_TAB && words.length > 0 && (
+        <TouchableOpacity
+          style={styles.floatingFlashcardButton}
+          onPress={handleFlashcardOpen}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="flash-on" size={24} color={Colors.white} />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 };
@@ -624,14 +649,35 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     marginLeft: 18,
   },
-  tabRow: {
+  actionButtons: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginHorizontal: 14,
     marginTop: 8,
     marginBottom: 4,
+  },
+  tabRow: {
+    flexDirection: "row",
+    flex: 1,
     backgroundColor: Colors.white,
     borderRadius: 12,
     overflow: "hidden",
+    marginRight: 10,
+  },
+  flashcardButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.tint,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  flashcardButtonText: {
+    color: Colors.white,
+    fontWeight: "600",
+    fontSize: 14,
+    marginLeft: 4,
   },
   tabBtn: {
     flex: 1,
@@ -738,5 +784,22 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
+  },
+  floatingFlashcardButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.tint,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.black,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+    zIndex: 100,
   },
 });
