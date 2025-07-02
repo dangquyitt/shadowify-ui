@@ -1,5 +1,4 @@
 import { ActionMenuModal } from "@/components/action-menu-modal";
-import Categories from "@/components/categories";
 import { Header } from "@/components/header";
 import PopularVideos from "@/components/popular-videos";
 import SearchBar from "@/components/search-bar";
@@ -18,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import Categories from "@/components/categories";
 import VideoItem from "@/components/video-item";
 
 type Props = {};
