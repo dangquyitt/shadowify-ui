@@ -72,7 +72,7 @@ export default function TranslateModal({
                     router.push({
                       pathname: "/(screens)/shadowing-practice",
                       params: {
-                        youtubeId: video.youtube_id,
+                        youtubeId: video?.youtube_id,
                         transcript: source,
                         startSec: segment.start_sec,
                         endSec: segment.end_sec,

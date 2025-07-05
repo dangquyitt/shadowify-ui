@@ -28,6 +28,7 @@ export default function ShadowingPracticeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const youtubeId = params.youtubeId as string;
+  console.log("YouTube ID:", youtubeId);
   const transcript = params.transcript as string;
   const startSec = Number(params.startSec) || 0;
   const endSec = Number(params.endSec) || 0;

@@ -233,7 +233,7 @@ export default function VideoDetailScreen() {
       router.push({
         pathname: "/(screens)/shadowing-practice",
         params: {
-          youtubeId: video.youtube_id,
+          youtubeId: video?.youtube_id,
           transcript: segment.content,
           startSec: segment.start_sec,
           endSec: segment.end_sec,
@@ -302,7 +302,7 @@ export default function VideoDetailScreen() {
             ref={playerRef}
             height={VIDEO_HEIGHT}
             width={"100%"}
-            videoId={video.youtube_id}
+            videoId={video?.youtube_id}
             play={!paused}
             playbackRate={playbackRate}
             initialPlayerParams={{
@@ -394,7 +394,7 @@ export default function VideoDetailScreen() {
           ) : (
             segments.map((segment) => (
               <TranscriptLine
-                youtubeId={video.youtube_id}
+                youtubeId={video?.youtube_id}
                 key={segment.id}
                 ref={(ref) => {
                   lineRefs.current[segment.id] = ref;
